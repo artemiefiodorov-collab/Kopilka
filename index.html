@@ -20,9 +20,10 @@
   --line: #E5E8EB; 
   --ink: #111111; 
   --mute: #8E9BB3;
-  --inc: #10B981; 
-  --exp: #F43F5E; 
-  --sav: #3B82F6;
+  /* Спокойные цвета */
+  --inc: #6B7280; 
+  --exp: #1F2937; 
+  --sav: #9CA3AF;
   --acc: #333333; 
   --acc-grad: linear-gradient(135deg, #4A4A4A, #222222); 
   --onacc: #fff; 
@@ -94,9 +95,6 @@ input.amt { font-size: 36px; font-weight: 700; text-align: center; background: t
 .mon b { font-size: 20px; text-transform: capitalize; font-weight: 700; }
 .note { font-size: 13px; color: var(--mute); margin: 8px 0 16px; line-height: 1.4; }
 .btnrow { display: flex; gap: 12px; } .btnrow .btn { flex: 1; }
-
-.hidden-amount { color: transparent !important; text-shadow: 0 0 12px rgba(0,0,0,0.5); user-select: none; }
-.eye-btn { background: none; border: 0; font-size: 24px; cursor: pointer; padding: 0 0 0 10px; }
 </style>
 </head>
 <body>
@@ -110,10 +108,10 @@ var DEF={exp:['Продукты','Бензин','Сигареты','Алкого
 var SYM={MDL:'лей',EUR:'€',USD:'$'};
 var GOAL_CAT='Накопления';
 var EMOJI = {'Продукты':'🛒','Бензин':'⛽','Сигареты':'🚬','Алкоголь':'🍷','Работа-еда':'💼','Коммуналка':'🏠','Кредиты':'🏦','Дети':'🧸','Здоровье':'💊','Одежда':'👕','Развлечения':'🎮','Связь':'📱','Подарки':'🎁','Прочее':'📦','Зарплата':'💰','Подработка':'🛠','Накопления':'🎯'};
-var COL=['#333333','#666666','#999999','#CCCCCC','#444444','#777777','#AAAAAA','#DDDDDD'];
+// Монохромная палитра для графиков
+var COL=['#1F2937','#374151','#4B5563','#6B7280','#9CA3AF','#D1D5DB','#E5E7EB','#F3F4F6'];
 var S=null, DB=null;
 var showAllStatsTx = false;
-var hideAmounts = false;
 
 function norm(o){
   o=o||{};
@@ -160,7 +158,6 @@ function dailyBudgetInfo(){var n=new Date(),cm=ym(n),left=daysLeftInMonth();var 
 function workTime(amount){if(!S.salary||!S.hours||amount<=0)return'';var rate=S.salary/S.hours;var min=Math.round((amount/rate)*60);var h=Math.floor(min/60),m=min%60;if(h>0&&m>0)return '~'+h+' ч '+m+' мин работы';if(h>0)return '~'+h+' ч работы';if(m>0)return '~'+m+' мин работы';return 'меньше минуты работы'}
 function catSpent(cat){var cm=ym(new Date()),s=0;S.tx.forEach(function(t){if(t.type==='exp'&&t.cat===cat&&isMDL(t)&&mkey(t)===cm)s+=t.amount});return s}
 
-// Обновленная функция расчета баланса цели (учитывает и экономию)
 function goalBal(g){
   var base=g.saved_base||0,d=0;
   S.tx.forEach(function(t){if(t.goal_id===g.id)d+=t.type==='exp'?t.amount:-t.amount});
@@ -171,7 +168,6 @@ function goalsTotal(){var s=0;S.goals.filter(function(g){return !g.archived}).fo
 function savingsTotal(){var s=0;S.savings.forEach(function(x){s+=x.amount});return s}
 
 function getEmoji(cat,type){ return EMOJI[cat] || (type==='inc'?'💰':'📦'); }
-function applyHide(val){ return hideAmounts ? '<span class="hidden-amount">'+val+'</span>' : val; }
 
 function txRow(t){
   var a=acc(t.acc); var em = getEmoji(t.cat, t.type);
@@ -179,21 +175,9 @@ function txRow(t){
   return '<div class="item"><button class="rowbtn" data-edit="'+t.id+'">'
     +'<div class="icon-circle">'+em+'</div>'
     +'<div class="tx-info"><span class="tx-title">'+esc(t.cat)+'</span>'+(t.note?'<small>'+esc(t.note)+'</small>':'<small>'+dfmt(t.date)+'</small>')+'</div>'
-    +'</button><div style="text-align:right"><b class="'+t.type+'" style="font-size:16px">'+applyHide(amt)+'</b><br><button class="del" data-del="'+t.id+'">Удалить</button></div></div>';
+    +'</button><div style="text-align:right"><b class="'+t.type+'" style="font-size:16px">'+amt+'</b><br><button class="del" data-del="'+t.id+'">Удалить</button></div></div>';
 }
-function savingRow(x){
-  var em = getEmoji(x.cat, 'save');
-  var goalName = '';
-  if (x.goal_id) {
-      var g = S.goals.filter(function(gg){return String(gg.id)===String(x.goal_id)})[0];
-      if (g) goalName = ' → ' + g.name;
-  }
-  return '<div class="item"><button class="rowbtn" data-sedit="'+x.id+'">'
-    +'<div class="icon-circle">'+em+'</div>'
-    +'<div class="tx-info"><span class="tx-title">'+esc(x.cat)+goalName+'</span><small>'+dfmt(x.date)+'</small></div>'
-    +'</button><div style="text-align:right"><b class="sav">'+applyHide(fmt2(x.amount))+'</b><br><button class="del" data-sdel="'+x.id+'">Удалить</button></div></div>';
-}
-function warns(){var cm=ym(new Date()),by={};S.tx.forEach(function(t){if(t.type==='exp'&&isMDL(t)&&mkey(t)===cm)by[t.cat]=(by[t.cat]||0)+t.amount});var w=Object.keys(S.limits).filter(function(k){return S.limits[k]>0&&(by[k]||0)>=S.limits[k]*0.8});return w.length?'<div class="card"><b>Лимиты на месяц</b>'+w.map(function(k){var v=by[k],o=v>S.limits[k];return '<div class="item" style="align-items:flex-start"><span style="flex-shrink:0; margin-right:12px">'+esc(k)+'</span><span class="'+(o?'exp':'')+'" style="text-align:right">'+applyHide(fmt2(v))+' из '+applyHide(fmt2(S.limits[k]))+(o?'<br>превышен':'')+'</span></div>'}).join('')+'</div>':''}
+function warns(){var cm=ym(new Date()),by={};S.tx.forEach(function(t){if(t.type==='exp'&&isMDL(t)&&mkey(t)===cm)by[t.cat]=(by[t.cat]||0)+t.amount});var w=Object.keys(S.limits).filter(function(k){return S.limits[k]>0&&(by[k]||0)>=S.limits[k]*0.8});return w.length?'<div class="card"><b>Лимиты на месяц</b>'+w.map(function(k){var v=by[k],o=v>S.limits[k];return '<div class="item" style="align-items:flex-start"><span style="flex-shrink:0; margin-right:12px">'+esc(k)+'</span><span class="'+(o?'exp':'')+'" style="text-align:right">'+fmt2(v)+' из '+fmt2(S.limits[k])+(o?'<br>превышен':'')+'</span></div>'}).join('')+'</div>':''}
 
 function donut(by,keys,tot){var C=2*Math.PI*32,off=0;var s='<svg viewBox="0 0 100 100" width="140" height="140" style="transform:rotate(-90deg);display:block;margin:10px auto 16px;"><circle cx="50" cy="50" r="32" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="12"/>';keys.forEach(function(k,i){var l=by[k]/tot*C;s+='<circle cx="50" cy="50" r="32" fill="none" stroke="'+COL[i%COL.length]+'" stroke-width="12" stroke-linecap="round" stroke-dasharray="'+l+' '+(C-l)+'" stroke-dashoffset="'+(-off)+'"/>';off+=l});return s+'</svg>'}
 
@@ -205,29 +189,21 @@ function lstHtml(q){var l;q=(q||'').trim().toLowerCase();if(q)l=S.tx.filter(func
 
 function render(){
   var h='',all=S.tx;
-  var fabTabs=['home','stats','savings','goals'];
+  var fabTabs=['home','stats','goals'];
   document.getElementById('fab').style.display=fabTabs.indexOf(tab)>=0?'flex':'none';
 
   if(tab==='home'){
     var free=totalMDL(),cm=ym(new Date()),m=sums(all.filter(function(t){return mkey(t)===cm}));
-    h+='<div style="display:flex; justify-content:space-between; align-items:center;"><h1>Свободные деньги</h1><button class="eye-btn" id="toggleHide">'+(hideAmounts?'🙈':'👁')+'</button></div>';
-    h+='<p class="big '+(free<0?'exp':'')+'">'+applyHide(fmt2(free))+'</p>';
+    h+='<h1>Свободные деньги</h1>';
+    h+='<p class="big '+(free<0?'exp':'')+'">'+fmt2(free)+'</p>';
     var dbHome=dailyBudgetInfo();var pctHome=dbHome.perDay>0?Math.min(100,Math.max(0,dbHome.spentToday/dbHome.perDay*100)):(dbHome.spentToday>0?100:0);var okHome=dbHome.leftToday>=0;
     
-    h+='<div class="card" style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="lbl">Бюджет на сегодня</span><span class="lbl">'+dbHome.left+' дн. до конца</span></div><div style="display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 12px"><b class="'+(okHome?'inc':'exp')+'" style="font-size:32px;font-weight:700">'+applyHide(fmt2(dbHome.leftToday))+'</b><span class="lbl">из '+applyHide(fmt2(dbHome.perDay))+'</span></div><div class="bar'+(okHome?'':' e')+'" style="margin:0"><i style="width:'+pctHome+'%"></i></div></div>';
+    h+='<div class="card" style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="lbl">Бюджет на сегодня</span><span class="lbl">'+dbHome.left+' дн. до конца</span></div><div style="display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 12px"><b class="'+(okHome?'inc':'exp')+'" style="font-size:32px;font-weight:700">'+fmt2(dbHome.leftToday)+'</b><span class="lbl">из '+fmt2(dbHome.perDay)+'</span></div><div class="bar'+(okHome?'':' e')+'" style="margin:0"><i style="width:'+pctHome+'%"></i></div></div>';
     
-    h+='<div style="margin-top:20px; overflow-x:auto; display:flex; gap:12px; padding-bottom:8px; scrollbar-width:none;">';
-    S.accs.forEach(function(a, i){
-      var b=accBal(a); 
-      var grad = i===0 ? 'linear-gradient(135deg, #333333, #111111)' : 'linear-gradient(135deg, #666666, #333333)';
-      h+='<div style="min-width:220px; background:'+grad+'; border-radius:20px; padding:20px; color:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.1);"><div style="opacity:0.8; font-size:14px; margin-bottom:8px">'+esc(a.name)+'</div><div style="font-size:24px; font-weight:700">'+applyHide(money(b,a.cur))+'</div><div style="opacity:0.8; font-size:12px; margin-top:12px">'+SYM[a.cur]+'</div></div>';
-    });
-    h+='</div>';
-
-    h+='<div class="row"><div class="card half"><div class="lbl">Доходы</div><div class="val inc">'+applyHide(fmt2(m.i))+'</div></div><div class="card half"><div class="lbl">Расходы</div><div class="val exp">'+applyHide(fmt2(m.e))+'</div></div></div>';
+    h+='<div class="row"><div class="card half"><div class="lbl">Доходы</div><div class="val inc">'+fmt2(m.i)+'</div></div><div class="card half"><div class="lbl">Расходы</div><div class="val exp">'+fmt2(m.e)+'</div></div></div>';
     h+=warns();
-    var gt=goalsTotal(),st=savingsTotal();
-    h+='<div class="row"><div class="card half"><div class="lbl">В целях</div><div class="val">'+applyHide(fmt2(gt))+'</div></div><div class="card half"><div class="lbl">Экономия</div><div class="val sav">'+applyHide(fmt2(st))+'</div></div></div>';
+    var gt=goalsTotal();
+    h+='<div class="card"><div class="lbl">В целях</div><div class="val">'+fmt2(gt)+'</div></div>';
     h+='<h2 style="margin-top:32px">Последние операции</h2><div class="card" style="margin-top:8px; padding:0 20px">';
     var last=all.slice().sort(function(a,b){return b.date<a.date?-1:b.date>a.date?1:b.id-a.id}).slice(0,5);
     h+=last.length?last.map(txRow).join(''):'<div class="empty">Операций пока нет. Нажми «+», чтобы добавить.</div>';
@@ -240,12 +216,12 @@ function render(){
     if(!activeGoals.length)h+='<div class="card empty">Целей пока нет.</div>';
     activeGoals.forEach(function(g){
       var bal=goalBal(g),p=g.target>0?Math.min(100,bal/g.target*100):0;
-      var lines='<div class="item" style="border:0;padding:0"><b>'+esc(g.name)+'</b><span style="font-weight:600;color:var(--acc)">'+Math.round(p)+'%</span></div><div class="bar"><i style="width:'+p+'%"></i></div><div class="lbl" style="margin-top:12px">'+applyHide(fmt2(bal))+' из '+applyHide(fmt2(g.target))+'</div>';
+      var lines='<div class="item" style="border:0;padding:0"><b>'+esc(g.name)+'</b><span style="font-weight:600;color:var(--acc)">'+Math.round(p)+'%</span></div><div class="bar"><i style="width:'+p+'%"></i></div><div class="lbl" style="margin-top:12px">'+fmt2(bal)+' из '+fmt2(g.target)+'</div>';
       if(g.days>0){var start=new Date(g.start+'T00:00:00');var passed=Math.max(0,Math.floor((Date.now()-start.getTime())/86400000));var left=Math.max(0,g.days-passed);var expected=g.target*Math.min(1,passed/g.days);var diff=bal-expected;
         lines+='<div class="lbl" style="margin-top:6px">Дней прошло: '+passed+' · осталось: '+left+'</div>';
         if(left>0&&bal<g.target){
           var neededPerDay = Math.max(0,(g.target-bal)/left);
-          lines+='<div class="lbl">Нужно откладывать: <b>'+applyHide(fmt2(neededPerDay))+'/день</b></div>';
+          lines+='<div class="lbl">Нужно откладывать: <b>'+fmt2(neededPerDay)+'/день</b></div>';
           
           if(neededPerDay > 0 && bal > 0 && passed > 0) {
             var avgPerDay = bal / passed;
@@ -256,28 +232,14 @@ function render(){
             }
           }
         }
-        if(passed>0){if(diff<-100)lines+='<div class="lbl exp" style="margin-top:4px">⚠️ Отстаёшь на '+applyHide(fmt2(Math.abs(diff)))+'</div>';else if(diff>100)lines+='<div class="lbl inc" style="margin-top:4px">✅ Опережаешь на '+applyHide(fmt2(diff))+'</div>';else lines+='<div class="lbl" style="margin-top:4px">👍 Идёшь по графику</div>'}
+        if(passed>0){if(diff<-100)lines+='<div class="lbl exp" style="margin-top:4px">⚠️ Отстаёшь на '+fmt2(Math.abs(diff))+'</div>';else if(diff>100)lines+='<div class="lbl inc" style="margin-top:4px">✅ Опережаешь на '+fmt2(diff)+'</div>';else lines+='<div class="lbl" style="margin-top:4px">👍 Идёшь по графику</div>'}
       }
-      // Кнопка "Сэкономил" вместо "Пополнить"
       lines+='<div class="chips" style="margin-top:16px"><button class="chip" data-dep="'+g.id+'">Сэкономил</button><button class="chip" data-wd="'+g.id+'">Снять</button><button class="chip" data-garch="'+g.id+'">В архив</button><button class="chip" data-gdel="'+g.id+'">Удалить</button></div></div>';
       h+='<div class="card">'+lines+'</div>';
     });
     h+='<div style="margin-top:20px"><button class="btn" id="addGoal">Новая цель</button></div>';
     var arch=S.goals.filter(function(g){return g.archived});
-    if(arch.length){h+='<h2>Архив</h2>';arch.forEach(function(g){var bal=goalBal(g),done=bal>=g.target;h+='<div class="card"><div class="item" style="border:0;padding:0"><b>'+esc(g.name)+'</b><span>'+(done?'🏆':'🛑')+'</span></div><div class="lbl" style="margin-top:4px">'+applyHide(fmt2(bal))+' из '+applyHide(fmt2(g.target))+'</div><div class="lbl">'+(done?'Достигнута':'Закрыта')+' · '+dfmt(g.start)+'</div><div class="chips" style="margin-top:10px"><button class="chip" data-gunarch="'+g.id+'">Вернуть</button></div></div>'})}
-  }
-
-  if(tab==='savings'){
-    var curM=ym(new Date());var monthSum=0;S.savings.forEach(function(x){if(mkey(x)===curM)monthSum+=x.amount});
-    h+='<h1>Экономия</h1><p class="note" style="margin-top:8px">Не потратил на хотелку — запиши сюда.</p>';
-    h+='<div class="card"><div class="lbl">Всего сэкономлено</div><div class="big sav" style="font-size:40px">'+applyHide(fmt2(savingsTotal()))+'</div><div class="lbl" style="margin-top:12px">За этот месяц: <b class="sav">'+applyHide(fmt2(monthSum))+'</b></div></div>';
-    var bySave={};S.savings.forEach(function(x){bySave[x.cat]=(bySave[x.cat]||0)+x.amount});
-    var sKeys=Object.keys(bySave).sort(function(a,b){return bySave[b]-bySave[a]});
-    if(sKeys.length){var tot=savingsTotal();h+='<h2>По категориям</h2><div class="card" style="margin-top:8px; padding:0 20px">'+sKeys.map(function(k,i){return '<div style="padding:12px 0; border-bottom:1px solid var(--line)"><div class="item" style="border:0;padding:0"><span><i class="dot" style="background:'+COL[i%COL.length]+'"></i>'+esc(k)+'</span><b>'+applyHide(fmt2(bySave[k]))+'</b></div><div class="bar s"><i style="width:'+bySave[k]/tot*100+'%"></i></div></div>'}).join('')+'</div>'}
-    h+='<h2>Записи</h2><div class="card" style="margin-top:8px; padding:0 20px">';
-    var sv=S.savings.slice().sort(function(a,b){return b.date<a.date?-1:b.date>a.date?1:b.id-a.id}).slice(0,50);
-    h+=sv.length?sv.map(savingRow).join(''):'<div class="empty">Записей нет. Нажми «+», чтобы добавить.</div>';
-    h+='</div>';
+    if(arch.length){h+='<h2>Архив</h2>';arch.forEach(function(g){var bal=goalBal(g),done=bal>=g.target;h+='<div class="card"><div class="item" style="border:0;padding:0"><b>'+esc(g.name)+'</b><span>'+(done?'🏆':'🛑')+'</span></div><div class="lbl" style="margin-top:4px">'+fmt2(bal)+' из '+fmt2(g.target)+'</div><div class="lbl">'+(done?'Достигнута':'Закрыта')+' · '+dfmt(g.start)+'</div><div class="chips" style="margin-top:10px"><button class="chip" data-gunarch="'+g.id+'">Вернуть</button></div></div>'})}
   }
 
   if(tab==='stats'){
@@ -286,15 +248,16 @@ function render(){
     var now=new Date(),isCur=viewM.getFullYear()===now.getFullYear()&&viewM.getMonth()===now.getMonth();
     h+='<div class="mon"><button id="pm">‹</button><b>'+name+'</b><button id="nm">›</button></div>';
     if(!isCur)h+='<div style="text-align:center;margin-bottom:16px"><button class="chip" id="tm">→ Текущий месяц</button></div>';
-    h+='<div class="row"><div class="card half"><div class="lbl">Доходы</div><div class="val inc">'+applyHide(fmt2(s.i))+'</div></div><div class="card half"><div class="lbl">Расходы</div><div class="val exp">'+applyHide(fmt2(s.e))+'</div></div></div>';
+    h+='<div class="row"><div class="card half"><div class="lbl">Доходы</div><div class="val inc">'+fmt2(s.i)+'</div></div><div class="card half"><div class="lbl">Расходы</div><div class="val exp">'+fmt2(s.e)+'</div></div></div>';
     var goalSpent=0;mm.forEach(function(t){if(t.type==='exp'&&t.cat===GOAL_CAT&&isMDL(t))goalSpent+=t.amount});
-    h+='<div class="card"><div class="item" style="border:0;padding:0"><span class="lbl">Отложено в цели</span><b>'+applyHide(fmt2(goalSpent))+'</b></div><div class="item" style="border:0;padding:0"><span class="lbl">Прочие расходы</span><b>'+applyHide(fmt2(Math.max(0,s.e-goalSpent)))+'</b></div><div class="item" style="border:0;padding:0"><span class="lbl">Разница доход−расход</span><b class="'+(s.i-s.e>=0?'inc':'exp')+'">'+applyHide(fmt2(s.i-s.e))+'</b></div></div>';
+    h+='<div class="card"><div class="item" style="border:0;padding:0"><span class="lbl">Отложено в цели</span><b>'+fmt2(goalSpent)+'</b></div><div class="item" style="border:0;padding:0"><span class="lbl">Прочие расходы</span><b>'+fmt2(Math.max(0,s.e-goalSpent))+'</b></div><div class="item" style="border:0;padding:0"><span class="lbl">Разница доход−расход</span><b class="'+(s.i-s.e>=0?'inc':'exp')+'">'+fmt2(s.i-s.e)+'</b></div></div>';
     var dbStat=dailyBudgetInfo();var pctStat=dbStat.perDay>0?Math.min(100,Math.max(0,dbStat.spentToday/dbStat.perDay*100)):(dbStat.spentToday>0?100:0);
-    h+='<div class="card"><div class="item" style="border:0;padding:0"><b>Бюджет на день</b><span class="lbl">'+(S.budgetMode==='balance'?'от остатка':'от плана месяца')+'</span></div><div class="item"><span class="lbl">'+(S.budgetMode==='balance'?'Свободно на счетах':'Остаток плана')+'</span><b>'+applyHide(fmt2(dbStat.remaining))+'</b></div><div class="item"><span class="lbl">Дней до конца месяца</span><b>'+dbStat.left+'</b></div><div class="item"><span class="lbl">Можно тратить в день</span><b class="'+(dbStat.perDay>=0?'inc':'exp')+'">'+applyHide(fmt2(dbStat.perDay))+'</b></div><div class="item"><span class="lbl">Потрачено сегодня</span><b>'+applyHide(fmt2(dbStat.spentToday))+'</b></div><div class="item" style="border:0"><span class="lbl">Осталось на сегодня</span><b class="'+(dbStat.leftToday>=0?'inc':'exp')+'">'+applyHide(fmt2(dbStat.leftToday))+'</b></div><div class="bar'+(dbStat.leftToday<0?' e':'')+'"><i style="width:'+pctStat+'%"></i></div></div>';
+    h+='<div class="card"><div class="item" style="border:0;padding:0"><b>Бюджет на день</b><span class="lbl">'+(S.budgetMode==='balance'?'от остатка':'от плана месяца')+'</span></div><div class="item"><span class="lbl">'+(S.budgetMode==='balance'?'Свободно на счетах':'Остаток плана')+'</span><b>'+fmt2(dbStat.remaining)+'</b></div><div class="item"><span class="lbl">Дней до конца месяца</span><b>'+dbStat.left+'</b></div><div class="item"><span class="lbl">Можно тратить в день</span><b class="'+(dbStat.perDay>=0?'inc':'exp')+'">'+fmt2(dbStat.perDay)+'</b></div><div class="item"><span class="lbl">Потрачено сегодня</span><b>'+fmt2(dbStat.spentToday)+'</b></div><div class="item" style="border:0"><span class="lbl">Осталось на сегодня</span><b class="'+(dbStat.leftToday>=0?'inc':'exp')+'">'+fmt2(dbStat.leftToday)+'</b></div><div class="bar'+(dbStat.leftToday<0?' e':'')+'"><i style="width:'+pctStat+'%"></i></div></div>';
     var by={};mm.filter(function(t){return t.type==='exp'&&isMDL(t)}).forEach(function(t){by[t.cat]=(by[t.cat]||0)+t.amount});
     var keys=Object.keys(by).sort(function(a,b){return by[b]-by[a]});
     h+='<h2>Расходы по категориям</h2><div class="card" style="margin-top:8px">';
-    if(keys.length){h+=donut(by,keys,s.e)+keys.map(function(k,i){var lim=S.limits[k],v=by[k],ov=lim&&v>lim,p=lim?Math.min(100,v/lim*100):v/s.e*100,c=!lim?'':ov?'var(--exp)':p>=80?'#FBBF24':'var(--inc)';return '<div style="padding:10px 0"><div class="item" style="border:0;padding:0"><span><i class="dot" style="background:'+COL[i%COL.length]+'"></i>'+esc(k)+'</span><b class="'+(ov?'exp':'')+'">'+applyHide(fmt2(v))+(lim?' / '+applyHide(fmt2(lim)):'')+'</b></div><div class="bar e"><i style="width:'+p+'%;'+(c?'background:'+c:'')+'"></i></div></div>'}).join('')}else h+='<div class="empty">В этом месяце расходов нет.</div>';
+    // Приглушенные цвета для прогресс-баров
+    if(keys.length){h+=donut(by,keys,s.e)+keys.map(function(k,i){var lim=S.limits[k],v=by[k],ov=lim&&v>lim,p=lim?Math.min(100,v/lim*100):v/s.e*100,c=!lim?'':ov?'#1F2937':p>=80?'#9CA3AF':'#6B7280';return '<div style="padding:10px 0"><div class="item" style="border:0;padding:0"><span><i class="dot" style="background:'+COL[i%COL.length]+'"></i>'+esc(k)+'</span><b class="'+(ov?'exp':'')+'">'+fmt2(v)+(lim?' / '+fmt2(lim):'')+'</b></div><div class="bar e"><i style="width:'+p+'%;'+(c?'background:'+c:'')+'"></i></div></div>'}).join('')}else h+='<div class="empty">В этом месяце расходов нет.</div>';
     h+='</div><h2>Последние 6 месяцев</h2><div class="card" style="margin-top:8px">'+trend()+'</div>';
     
     h+='<div style="margin-top:24px"><button class="btn ghost" id="toggleTx">📁 '+(showAllStatsTx?'Скрыть операции за месяц':'Посмотреть все операции за месяц ('+mm.length+')')+'</button></div>';
@@ -313,7 +276,7 @@ function render(){
   }
 
   document.getElementById('app').innerHTML=h;
-  var nav=[['home','🏠','Главная'],['goals','🎯','Цели'],['savings','💡','Экономия'],['stats','📊','Месяц'],['more','⚙️','Ещё']];
+  var nav=[['home','🏠','Главная'],['goals','🎯','Цели'],['stats','📊','Месяц'],['more','⚙️','Ещё']];
   document.getElementById('nav').innerHTML=nav.map(function(n){return '<button data-tab="'+n[0]+'" class="'+(tab===n[0]?'on':'')+'"><span>'+n[1]+'</span>'+n[2]+'</button>'}).join('');
 }
 
@@ -336,7 +299,8 @@ function addTx(eid){
             :'<div class="btnrow"><button class="btn ghost" id="okNext">Сохранить и ещё</button><button class="btn" id="ok">Сохранить</button></div>'));
     var sh=document.querySelector('.sheet');
     function collect(){return {type:type,amount:num(document.getElementById('a').value),cat:cat,acc:aid,note:document.getElementById('n').value.trim(),date:document.getElementById('d').value||todayStr()}}
-    function updWT(){var a=document.getElementById('a'),wt=document.getElementById('wt');if(!a||!wt)return;var v=num(a.value);if(type==='exp'&&v>0){var txt='⏱ '+workTime(v);if(S.limits[cat]){var spent=catSpent(cat),next=spent+v,lim=S.limits[cat];var pct=Math.round(next/lim*100);if(next>lim){wt.innerHTML=esc(txt)+'<br><span style="color:var(--exp)">🚨 Превышение лимита «'+esc(cat)+'»: '+fmt2(next)+' из '+fmt2(lim)+'</span>';return}else if(next>=lim*0.8){wt.innerHTML=esc(txt)+'<br><span style="color:#FBBF24">⚠️ Лимит «'+esc(cat)+'»: '+fmt2(next)+' из '+fmt2(lim)+' ('+pct+'%)</span>';return}}wt.textContent=txt}else{wt.textContent=''}}
+    // Приглушенный цвет для предупреждения
+    function updWT(){var a=document.getElementById('a'),wt=document.getElementById('wt');if(!a||!wt)return;var v=num(a.value);if(type==='exp'&&v>0){var txt='⏱ '+workTime(v);if(S.limits[cat]){var spent=catSpent(cat),next=spent+v,lim=S.limits[cat];var pct=Math.round(next/lim*100);if(next>lim){wt.innerHTML=esc(txt)+'<br><span style="color:#1F2937">🚨 Превышение лимита «'+esc(cat)+'»: '+fmt2(next)+' из '+fmt2(lim)+'</span>';return}else if(next>=lim*0.8){wt.innerHTML=esc(txt)+'<br><span style="color:#6B7280">⚠️ Лимит «'+esc(cat)+'»: '+fmt2(next)+' из '+fmt2(lim)+' ('+pct+'%)</span>';return}}wt.textContent=txt}else{wt.textContent=''}}
     function doSave(keepOpen){var rec=collect();if(!(rec.amount>0)){document.getElementById('a').focus();return}
       if(rec.type==='exp'&&S.limits[rec.cat]){var spent=catSpent(rec.cat),lim=S.limits[rec.cat];if(spent+rec.amount>lim&&!confirm('🚨 Превышение лимита «'+rec.cat+'»: '+fmt2(spent+rec.amount)+' из '+fmt2(lim)+'. Всё равно записать?'))return}
       if(ex){for(var k in rec)ex[k]=rec[k]}else{rec.id=Date.now()+Math.random();S.tx.push(rec)}save();
@@ -364,7 +328,6 @@ function amountSheet(title,cb,accounts){accounts=accounts||S.accs.filter(functio
 function goalSheet(){modal('<b style="font-size:18px">Новая цель</b><input id="gn" placeholder="Название" style="margin-top:20px"><input id="gt" inputmode="decimal" placeholder="Сумма цели, лей"><input id="gd" inputmode="numeric" placeholder="За сколько дней (необязательно)"><button class="btn" id="ok" style="margin-top:16px">Создать</button>');
   document.getElementById('ok').onclick=function(){var n=document.getElementById('gn').value.trim(),t=num(document.getElementById('gt').value),d=parseInt(document.getElementById('gd').value)||0;if(!n||!(t>0))return;S.goals.push({id:Date.now()+Math.random(),name:n,target:t,saved_base:0,start:todayStr(),days:d,archived:false});save();closeM();render()}}
 
-// Обновленная функция сохранения экономии (с выбором цели)
 function savingSheet(id, presetGoalId){
   var ex=id?S.savings.filter(function(x){return String(x.id)===String(id)})[0]:null;
   var cat=ex?ex.cat:S.cats.save[0];
@@ -375,7 +338,6 @@ function savingSheet(id, presetGoalId){
   var goalId = ex ? ex.goal_id : (presetGoalId || null);
   var activeGoals = S.goals.filter(function(g){return !g.archived});
   
-  // Если цель не задана и она всего одна — выбираем автоматически
   if(!goalId && activeGoals.length === 1) {
       goalId = activeGoals[0].id;
   }
@@ -385,7 +347,6 @@ function savingSheet(id, presetGoalId){
       +'<input class="amt" id="a" inputmode="decimal" placeholder="0" '+(ex?'':'autofocus ')+'value="'+esc(amt)+'" style="margin-top:20px">'
       +'<div class="lbl">Категория</div><div class="chips" style="margin-top:8px">'+clist('save',cat).map(function(c){return '<button class="chip' + (c===cat?' on':'') + '" data-c="'+esc(c)+'">'+esc(c)+'</button>'}).join('')+'</div>';
       
-    // Выбор цели
     if (activeGoals.length > 0) {
       h += '<div class="lbl">В какую цель?</div><div class="chips" style="margin-top:8px">';
       h += '<button class="chip' + (!goalId?' on':'') + '" data-g="">Без цели</button>';
@@ -467,25 +428,20 @@ document.addEventListener('click',function(e){
   var t=e.target.closest('button');if(!t)return;var d=t.dataset;
   if(d.tab){tab=d.tab;render();window.scrollTo(0,0);return}
   if(d.bm){S.budgetMode=d.bm;save();render();return}
-  if(t.id==='toggleHide'){hideAmounts=!hideAmounts;render();return}
-  if(t.id==='fab'){if(tab==='savings')savingSheet();else if(tab==='goals')goalSheet();else addTx();return}
+  if(t.id==='fab'){if(tab==='goals')goalSheet();else addTx();return}
   if(t.id==='toggleTx'){showAllStatsTx=!showAllStatsTx;render();return}
   if(d.edit){addTx(d.edit);return}
-  if(d.sedit){savingSheet(d.sedit);return}
   if(d.cat){catSheet(d.cat,d.name);return}
   if(d.acc){accSheet(d.acc);return}
   if(d.del){if(confirm('Удалить?')){S.tx=S.tx.filter(function(x){return String(x.id)!==d.del});save();render()}return}
-  if(d.sdel){if(confirm('Удалить?')){S.savings=S.savings.filter(function(x){return String(x.id)!==d.sdel});save();render()}return}
   if(t.id==='addGoal'){goalSheet();return}
   
-  // Обновленный обработчик кнопки "Сэкономил" на вкладке Цели
   if(d.dep){ savingSheet(null, d.dep); return; }
   
   if(d.wd){var g2=findG(d.wd);amountSheet('Снять с «'+esc(g2.name)+'»',function(v,aid){S.tx.push({id:Date.now()+Math.random(),type:'inc',amount:v,cat:GOAL_CAT,acc:aid,note:'Снятие с цели: '+g2.name,date:todayStr(),goal_id:g2.id})});return}
   if(d.garch){var ga=findG(d.garch);if(!confirm('В архив?'))return;ga.archived=true;save();render();return}
   if(d.gunarch){var gr=findG(d.gunarch);gr.archived=false;save();render();return}
   
-  // Обновленный обработчик удаления цели (отвязывает экономию)
   if(d.gdel){
     var g3=findG(d.gdel),bal=goalBal(g3);
     if(!confirm('Удалить?'))return;
