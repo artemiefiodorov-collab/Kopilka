@@ -188,7 +188,7 @@ function savingsTotal(){var s=0;S.savings.forEach(function(x){s+=x.amount});retu
 
 function txRow(t){var a=acc(t.acc);return '<div class="item"><button class="rowbtn" data-edit="'+t.id+'">'+esc(t.cat)+(t.note?' · '+esc(t.note):'')+'<small>'+dfmt(t.date)+(S.accs.length>1?' · '+esc(a.name):'')+'</small></button><div style="text-align:right"><b class="'+t.type+'">'+(t.type==='inc'?'+':'−')+money(t.amount,a.cur)+'</b><br><button class="del" data-del="'+t.id+'">Удалить</button></div></div>'}
 function savingRow(x){return '<div class="item"><button class="rowbtn" data-sedit="'+x.id+'">'+esc(x.cat)+(x.note?' · '+esc(x.note):'')+'<small>'+dfmt(x.date)+'</small></button><div style="text-align:right"><b class="sav">'+fmt2(x.amount)+'</b><br><button class="del" data-sdel="'+x.id+'">Удалить</button></div></div>'}
-function warns(){var cm=ym(new Date()),by={};S.tx.forEach(function(t){if(t.type==='exp'&&isMDL(t)&&mkey(t)===cm)by[t.cat]=(by[t.cat]||0)+t.amount});var w=Object.keys(S.limits).filter(function(k){return S.limits[k]>0&&(by[k]||0)>=S.limits[k]*0.8});return w.length?'<div class="card"><b>Лимиты на месяц</b>'+w.map(function(k){var v=by[k],o=v>S.limits[k];return '<div class="item"><span>'+esc(k)+'</span><span class="'+(o?'exp':'')+'">'+fmt2(v)+' из '+fmt2(S.limits[k])+(o?' · превышен':'')+'</span></div>'}).join('')+'</div>':''}
+function warns(){var cm=ym(new Date()),by={};S.tx.forEach(function(t){if(t.type==='exp'&&isMDL(t)&&mkey(t)===cm)by[t.cat]=(by[t.cat]||0)+t.amount});var w=Object.keys(S.limits).filter(function(k){return S.limits[k]>0&&(by[k]||0)>=S.limits[k]*0.8});return w.length?'<div class="card"><b>Лимиты на месяц</b>'+w.map(function(k){var v=by[k],o=v>S.limits[k];return '<div class="item" style="align-items:flex-start"><span style="flex-shrink:0; margin-right:12px">'+esc(k)+'</span><span class="'+(o?'exp':'')+'" style="text-align:right">'+fmt2(v)+' из '+fmt2(S.limits[k])+(o?'<br>превышен':'')+'</span></div>'}).join('')+'</div>':''}
 
 function donut(by,keys,tot){var C=2*Math.PI*40,off=0;var s='<svg viewBox="0 0 100 100" width="180" height="180" style="transform:rotate(-90deg);display:block;margin:10px auto 20px;filter:drop-shadow(0 0 10px rgba(85,107,47,0.2))"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="16"/>';keys.forEach(function(k,i){var l=by[k]/tot*C;s+='<circle cx="50" cy="50" r="40" fill="none" stroke="'+COL[i%COL.length]+'" stroke-width="16" stroke-linecap="round" stroke-dasharray="'+l+' '+(C-l)+'" stroke-dashoffset="'+(-off)+'"/>';off+=l});return s+'</svg>'}
 
@@ -208,13 +208,13 @@ function render(){
     h+='<h1>Свободные деньги</h1><p class="big '+(free<0?'exp':'')+'">'+fmt2(free)+'</p>';
     var dbHome=dailyBudgetInfo();var pctHome=dbHome.perDay>0?Math.min(100,Math.max(0,dbHome.spentToday/dbHome.perDay*100)):(dbHome.spentToday>0?100:0);var okHome=dbHome.leftToday>=0;
     h+='<div class="card" style="padding:16px 20px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="lbl">Бюджет на сегодня</span><span class="lbl">'+dbHome.left+' дн. до конца</span></div><div style="display:flex;justify-content:space-between;align-items:baseline;margin:6px 0 10px"><b class="'+(okHome?'inc':'exp')+'" style="font-size:28px;font-weight:700">'+fmt2(dbHome.leftToday)+'</b><span class="lbl">из '+fmt2(dbHome.perDay)+'</span></div><div class="bar'+(okHome?'':' e')+'" style="margin:0"><i style="width:'+pctHome+'%"></i></div></div>';
-    h+='<div class="card"><div class="lbl">Мои счета</div>'+S.accs.map(function(a){var b=accBal(a);return '<div class="item"><span>'+esc(a.name)+' <small style="color:var(--mute)">'+SYM[a.cur]+'</small></span><span style="text-align:right"><b>'+money(b,a.cur)+'</b>'+(a.cur!=='MDL'?'<small style="display:block">не входит в общий итог</small>':'')+'</span></div>'}).join('')+'</div>';
+    h+='<div class="card"><div class="lbl">Мои счета</div>'+S.accs.map(function(a){var b=accBal(a);return '<div class="item"><span>'+esc(a.name)+' <span style="color:var(--mute); font-size:13px; margin-left:4px">'+SYM[a.cur]+'</span></span><span style="text-align:right"><b>'+money(b,a.cur)+'</b>'+(a.cur!=='MDL'?'<small style="display:block">не входит в общий итог</small>':'')+'</span></div>'}).join('')+'</div>';
     h+='<div class="row"><div class="card half"><div class="lbl">Доходы</div><div class="val inc">'+fmt2(m.i)+'</div></div><div class="card half"><div class="lbl">Расходы</div><div class="val exp">'+fmt2(m.e)+'</div></div></div>';
     h+=warns();
     var gt=goalsTotal(),st=savingsTotal();
     h+='<div class="row"><div class="card half"><div class="lbl">В целях</div><div class="val">'+fmt2(gt)+'</div></div><div class="card half"><div class="lbl">Экономия</div><div class="val sav">'+fmt2(st)+'</div></div></div>';
     h+='<h2>Последние операции</h2><div class="card" style="margin-top:8px">';
-    var last=all.slice().sort(function(a,b){return b.date<a.date?-1:b.date>a.date?1:b.id-a.id}).slice(0,15);
+    var last=all.slice().sort(function(a,b){return b.date<a.date?-1:b.date>a.date?1:b.id-a.id}).slice(0,5);
     h+=last.length?last.map(txRow).join(''):'<div class="empty">Операций пока нет. Нажми «+», чтобы добавить.</div>';
     h+='</div>';
   }
@@ -231,12 +231,12 @@ function render(){
         if(left>0&&bal<g.target)lines+='<div class="lbl">Нужно откладывать: <b>'+fmt2(Math.max(0,(g.target-bal)/left))+'/день</b></div>';
         if(passed>0){if(diff<-100)lines+='<div class="lbl exp" style="margin-top:4px">⚠️ Отстаёшь на '+fmt2(Math.abs(diff))+'</div>';else if(diff>100)lines+='<div class="lbl inc" style="margin-top:4px">✅ Опережаешь на '+fmt2(diff)+'</div>';else lines+='<div class="lbl" style="margin-top:4px">👍 Идёшь по графику</div>'}
       }
-      lines+='<div class="row" style="margin-top:14px"><button class="chip" data-dep="'+g.id+'">Пополнить</button><button class="chip" data-wd="'+g.id+'">Снять</button><button class="chip" data-garch="'+g.id+'">В архив</button><button class="chip" data-gdel="'+g.id+'">Удалить</button></div></div>';
+      lines+='<div class="chips" style="margin-top:14px"><button class="chip" data-dep="'+g.id+'">Пополнить</button><button class="chip" data-wd="'+g.id+'">Снять</button><button class="chip" data-garch="'+g.id+'">В архив</button><button class="chip" data-gdel="'+g.id+'">Удалить</button></div></div>';
       h+='<div class="card">'+lines+'</div>';
     });
     h+='<div style="margin-top:20px"><button class="btn" id="addGoal">Новая цель</button></div>';
     var arch=S.goals.filter(function(g){return g.archived});
-    if(arch.length){h+='<h2>Архив</h2>';arch.forEach(function(g){var bal=goalBal(g),done=bal>=g.target;h+='<div class="card"><div class="item" style="border:0;padding:0"><b>'+esc(g.name)+'</b><span>'+(done?'🏆':'🛑')+'</span></div><div class="lbl" style="margin-top:4px">'+fmt2(bal)+' из '+fmt2(g.target)+'</div><div class="lbl">'+(done?'Достигнута':'Закрыта')+' · '+dfmt(g.start)+'</div><div class="row" style="margin-top:10px"><button class="chip" data-gunarch="'+g.id+'">Вернуть</button></div></div>'})}
+    if(arch.length){h+='<h2>Архив</h2>';arch.forEach(function(g){var bal=goalBal(g),done=bal>=g.target;h+='<div class="card"><div class="item" style="border:0;padding:0"><b>'+esc(g.name)+'</b><span>'+(done?'🏆':'🛑')+'</span></div><div class="lbl" style="margin-top:4px">'+fmt2(bal)+' из '+fmt2(g.target)+'</div><div class="lbl">'+(done?'Достигнута':'Закрыта')+' · '+dfmt(g.start)+'</div><div class="chips" style="margin-top:10px"><button class="chip" data-gunarch="'+g.id+'">Вернуть</button></div></div>'})}
   }
 
   if(tab==='savings'){
