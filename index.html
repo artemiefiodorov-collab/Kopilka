@@ -37,7 +37,7 @@ body {
   margin: 0; background: var(--bg); color: var(--ink); 
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif; 
   font-size: 16px; line-height: 1.4; 
-  padding-bottom: 120px; /* Отступ для кнопки + */
+  padding-bottom: 120px; 
 }
 main { max-width: 520px; margin: 0 auto; padding: 20px 16px; }
 h1 { font-size: 14px; font-weight: 600; color: var(--mute); margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -64,6 +64,7 @@ h2 { font-size: 20px; margin: 24px 0 8px; font-weight: 700; letter-spacing: -0.0
 button { font-family: inherit; }
 .btn { width: 100%; border: 0; border-radius: 18px; padding: 16px; font-size: 16px; font-weight: 600; background: var(--acc-grad); color: var(--onacc); cursor: pointer; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
 .btn.ghost { background: var(--chip); color: var(--ink); box-shadow: none; }
+.btn.danger { background: #FEE2E2; color: #B91C1C; box-shadow: none; }
 .empty { color: var(--mute); padding: 24px 0; text-align: center; font-size: 15px; }
 
 nav { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--line); display: flex; padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 5; }
@@ -156,7 +157,7 @@ function daysInMonth(y,m){return new Date(y,m+1,0).getDate()}
 function daysLeftInMonth(){var n=new Date();return daysInMonth(n.getFullYear(),n.getMonth())-n.getDate()+1}
 function todaySpent(){var td=todayStr(),s=0;S.tx.forEach(function(t){if(t.date===td&&t.type==='exp'&&isMDL(t)&&t.cat!==GOAL_CAT)s+=t.amount});return s}
 function dailyBudgetInfo(){var n=new Date(),cm=ym(n),left=daysLeftInMonth();var m=sums(S.tx.filter(function(t){return mkey(t)===cm}));var remaining=S.budgetMode==='balance'?totalMDL():(m.i-m.e);var perDay=left>0?remaining/left:0;var spentToday=todaySpent();return {left:left,remaining:remaining,perDay:perDay,spentToday:spentToday,leftToday:perDay-spentToday}}
-function workTime(amount){if(!S.salary||!S.hours||amount<=0)return'';var rate=S.salary/S.hours;var min=Math.round((amount/rate)*60);var h=Math.floor(min/60),m=min%60;if(h>0&&m>0)return '~'+h+' ч '+m+' мин работы';if(h>0)return '~'+h+' ч работы';if(m>0)return '~'+m+' мин работы';return 'меньше минуты работы'}
+function workTime(amount){if(!Sif.salary||!S.h(hours||amount<=0)return'';var rate=S.s>alary/S.hours;var min=Math.round((amount/rate)*60);var h=Math.floor(min/60),m=min%60;if(h>0&&m>0)return '~'+h+' ч '+m+' мин работы';0)return '~'+h+' ч работы';if(m>0)return '~'+m+' мин работы';return 'меньше минуты работы'}
 function catSpent(cat){var cm=ym(new Date()),s=0;S.tx.forEach(function(t){if(t.type==='exp'&&t.cat===cat&&isMDL(t)&&mkey(t)===cm)s+=t.amount});return s}
 
 function goalBal(g){
@@ -169,7 +170,6 @@ function goalsTotal(){var s=0;S.goals.filter(function(g){return !g.archived}).fo
 
 function getEmoji(cat,type){ return EMOJI[cat] || (type==='inc'?'💰':'📦'); }
 
-// ИСПРАВЛЕННЫЙ СПИСОК ОПЕРАЦИЙ (теперь без комментариев)
 function txRow(t){
   var a=acc(t.acc); var em = getEmoji(t.cat, t.type);
   var amt = (t.type==='inc'?'+':'−')+money(t.amount,a.cur);
@@ -273,6 +273,9 @@ function render(){
     h+='<div class="card"><b>Дневной бюджет</b><div class="chips" style="margin:8px 0 0"><button class="chip'+(S.budgetMode==='plan'?' on':'')+'" data-bm="plan">От плана месяца</button><button class="chip'+(S.budgetMode==='balance'?' on':'')+'" data-bm="balance">От остатка на счетах</button></div></div>';
     h+=catCard();
     h+='<div class="card"><b>Резервная копия</b><p class="note">Данные в IndexedDB + резерв в localStorage.</p><div class="btnrow"><button class="btn" id="expJson">JSON</button><button class="btn ghost" id="expCsv">CSV</button></div><div style="height:10px"></div><div class="btnrow"><button class="btn ghost" id="impJson">Импорт JSON</button><button class="btn ghost" id="impCsv">Импорт CSV</button></div></div>';
+    
+    // НОВАЯ УМНАЯ КНОПКА
+    h+='<div class="card" style="margin-top:24px; border: 1px solid #FECACA;"><b style="color:#B91C1C;">Опасная зона</b><p class="note">Удаляет операции только за выбранный месяц (например, 09 для сентября). Остальные месяцы останутся на месте.</p><button class="btn danger" id="clearMonth">Удалить данные за месяц</button></div>';
   }
 
   document.getElementById('app').innerHTML=h;
@@ -510,6 +513,26 @@ document.addEventListener('click',function(e){
   if(t.id==='pm'){viewM=new Date(viewM.getFullYear(),viewM.getMonth()-1,1);render();return}
   if(t.id==='nm'){viewM=new Date(viewM.getFullYear(),viewM.getMonth()+1,1);render();return}
   if(t.id==='tm'){viewM=new Date();render();return}
+  
+  if(t.id==='clearMonth'){
+    var mStr = prompt("Введите номер месяца для удаления (например, 09 для сентября 2026):", "");
+    if(!mStr) return;
+    mStr = mStr.trim().padStart(2, '0');
+    var yStr = prompt("Введите год (например, 2026):", "2026");
+    if(!yStr) return;
+    var prefix = yStr + "-" + mStr + "-";
+    
+    if(confirm("Удалить ВСЕ операции и экономию за " + mStr + "." + yStr + "? Это действие нельзя отменить.")){
+        var before = S.tx.length;
+        S.tx = S.tx.filter(function(t){ return t.date.indexOf(prefix) !== 0; });
+        S.savings = S.savings.filter(function(x){ return x.date.indexOf(prefix) !== 0; });
+        save();
+        render();
+        alert("Удалено операций: " + (before - S.tx.length));
+    }
+    return;
+  }
+
   if(t.id==='expJson'){var txt=JSON.stringify(S);modal('<b style="font-size:18px">Экспорт JSON</b><textarea id="ta" rows="6" readonly style="margin-top:16px">'+esc(txt)+'</textarea><div class="btnrow"><button class="btn ghost" id="cp">Скопировать</button><button class="btn" id="dl">Скачать</button></div>');document.getElementById('cp').onclick=function(){var ta=document.getElementById('ta');ta.select();try{navigator.clipboard.writeText(txt).then(function(){ta.value='Готово'},function(){document.execCommand('copy')})}catch(x){}};document.getElementById('dl').onclick=function(){download('kopilka-'+todayStr()+'.json',txt,'application/json')};return}
   if(t.id==='expCsv'){var csv=toCSV();modal('<b style="font-size:18px">Экспорт CSV</b><div class="btnrow" style="margin-top:16px"><button class="btn" id="dl">Скачать CSV</button><button class="btn ghost" id="cp">Скопировать</button></div><textarea id="ta" rows="5" readonly style="margin-top:16px">'+esc(csv)+'</textarea>');document.getElementById('dl').onclick=function(){download('kopilka-'+todayStr()+'.csv',csv,'text/csv;charset=utf-8')};document.getElementById('cp').onclick=function(){var ta=document.getElementById('ta');ta.select();try{navigator.clipboard.writeText(csv).then(function(){ta.value='Готово'},function(){document.execCommand('copy')})}catch(x){}};return}
   if(t.id==='impJson'){modal('<b style="font-size:18px">Импорт JSON</b><p class="note">Текущие данные заменятся.</p><textarea id="ta" rows="6" placeholder="JSON"></textarea><input type="file" id="fi" accept=".json"><button class="btn" id="go">Восстановить</button>');document.getElementById('fi').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){document.getElementById('ta').value=r.result};r.readAsText(f)};document.getElementById('go').onclick=function(){try{var o=JSON.parse(document.getElementById('ta').value);if(!o.tx||!o.goals)throw 0;S=norm(o);save();closeM();render()}catch(x){alert('Ошибка')}};return}
