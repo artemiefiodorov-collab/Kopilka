@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#F4F5F7">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Копилка">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -31,12 +31,13 @@ body {
   margin: 0; background: var(--bg); color: var(--ink); 
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif; 
   font-size: 16px; line-height: 1.4; 
-  /* Отступ гарантирует, что контент не залезет под меню */
-  padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); 
+  /* Учитываем верхний статус-бар (челку) и нижнюю панель */
+  padding-top: calc(20px + env(safe-area-inset-top, 0px)); 
+  padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px)); 
   transition: background 0.3s, color 0.3s;
   overscroll-behavior-y: none;
 }
-main { max-width: 520px; margin: 0 auto; padding: 20px 16px; }
+main { max-width: 520px; margin: 0 auto; padding: 0 16px; }
 h1 { font-size: 14px; font-weight: 600; color: var(--mute); margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.5px; }
 .big { font-size: 48px; font-weight: 700; letter-spacing: -0.04em; margin: 0; line-height: 1.1; }
 .row { display: flex; gap: 12px; }
@@ -66,18 +67,17 @@ button { font-family: inherit; }
   background: var(--bg);
   display: flex; flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
   border-top: 1px solid var(--line);
 }
 
 /* Панель кнопок Расход/Доход */
 .actions-row {
-  display: flex; gap: 10px; padding: 12px 16px;
+  display: flex; gap: 8px; padding: 10px 16px;
   max-width: 520px; margin: 0 auto; width: 100%;
 }
 .action-btn {
-  height: 52px; border-radius: 14px; border: none;
-  font-size: 16px; font-weight: 700;
+  height: 46px; border-radius: 12px; border: none;
+  font-size: 15px; font-weight: 700;
   display: flex; align-items: center; justify-content: center; gap: 6px;
   cursor: pointer; transition: transform 0.1s;
 }
@@ -89,12 +89,12 @@ button { font-family: inherit; }
 nav { 
   display: flex; 
   background: var(--card); 
-  padding: 8px 6px;
+  padding: 6px 6px 8px;
   border-top: 1px solid var(--line); 
 }
-nav button { flex: 1; background: none; border: 0; padding: 8px 2px; font-size: 11px; color: var(--mute); font-weight: 600; cursor: pointer; }
+nav button { flex: 1; background: none; border: 0; padding: 6px 2px; font-size: 10px; color: var(--mute); font-weight: 600; cursor: pointer; }
 nav button.on { color: var(--ink); }
-nav button span { display: block; font-size: 24px; line-height: 1.2; margin-bottom: 2px; }
+nav button span { display: block; font-size: 22px; line-height: 1.2; margin-bottom: 2px; }
 
 /* Модальные окна */
 .sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: flex-end; }
@@ -151,7 +151,6 @@ input.amt { font-size: 40px; font-weight: 700; text-align: center; background: t
 <body>
 <main id="app"></main>
 
-<!-- ОБЪЕДИНЕННАЯ ПАНЕЛЬ СНИЗУ -->
 <div class="bottom-panel" id="bottom-panel">
     <div class="actions-row" id="actions-row">
         <button class="action-btn btn-exp" id="btn-exp">Расход</button>
@@ -311,7 +310,6 @@ function lstHtml(q){
 function render(){
   var h='',all=S.tx;
   
-  // Управляем видимостью панели кнопок (скрываем на настройках)
   var showActions = ['home','stats'].indexOf(tab) >= 0;
   document.getElementById('actions-row').style.display = showActions ? 'flex' : 'none';
 
