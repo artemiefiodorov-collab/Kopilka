@@ -1,4 +1,4 @@
-const CACHE = 'kopilka-v25';
+const CACHE = 'kopilka-v26';
 const ASSETS = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
