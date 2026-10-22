@@ -28,12 +28,12 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html { height: 100%; background: var(--bg); overflow: hidden; }
+html { background: var(--bg); overscroll-behavior: none; }
 body {
   margin: 0; background: var(--bg); color: var(--ink);
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 16px; line-height: 1.4;
-  position: fixed; inset: 0;
+  position: relative; height: var(--full, 100dvh);
   display: flex; flex-direction: column;
   overflow: hidden;
   padding-top: env(safe-area-inset-top, 0px);
@@ -72,9 +72,9 @@ button { font-family: inherit; }
 /* ЕДИНЫЙ НИЖНИЙ БЛОК: Кнопки + Меню (теперь в потоке, а не fixed) */
 .bottom-panel {
   flex-shrink: 0; z-index: 100;
-  background: var(--bg);
+  background: var(--card);
   margin-bottom: calc(var(--lift) * -1);
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) * 0.1);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) * 0.35);
   border-top: 1px solid var(--line);
 }
 .actions-row {
@@ -94,7 +94,7 @@ button { font-family: inherit; }
 
 nav { 
   display: flex; 
-  background: var(--bg); 
+  background: var(--card); 
   padding: 6px 6px 0;
   border-top: 1px solid var(--line); 
 }
@@ -932,6 +932,18 @@ document.addEventListener('click',function(e){
 document.addEventListener('input',function(e){if(e.target.id==='q'){var l=document.getElementById('lst');if(l)l.innerHTML=lstHtml(e.target.value)}});
 document.addEventListener('change',function(e){var k=e.target.dataset&&e.target.dataset.wt;if(k){var v=num(e.target.value);if(v>0){S[k]=v;save()}render()}});
 
+function setFull(){
+  var root=document.documentElement;
+  root.style.removeProperty('--full');
+  if(!navigator.standalone)return;
+  var portrait=window.innerHeight>=window.innerWidth;
+  var full=portrait?Math.max(screen.width,screen.height):Math.min(screen.width,screen.height);
+  if(full>window.innerHeight)root.style.setProperty('--full',full+'px');
+}
+window.addEventListener('resize',setFull);
+window.addEventListener('orientationchange',function(){setTimeout(setFull,200)});
+document.getElementById('bottom-panel').addEventListener('touchmove',function(e){e.preventDefault()},{passive:false});
+setFull();
 initApp();
 })();
 </script>
