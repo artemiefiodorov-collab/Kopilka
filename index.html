@@ -27,12 +27,12 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html { height: 100%; }
+html { height: 100%; background: var(--bg); }
 body {
   margin: 0; background: var(--bg); color: var(--ink);
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 16px; line-height: 1.4;
-  height: 100%; height: 100dvh;
+  position: fixed; inset: 0;
   display: flex; flex-direction: column;
   overflow: hidden;
   padding-top: env(safe-area-inset-top, 0px);
@@ -72,7 +72,7 @@ button { font-family: inherit; }
 .bottom-panel {
   flex-shrink: 0; z-index: 100;
   background: var(--card);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) * 0.1);
   border-top: 1px solid var(--line);
 }
 .actions-row {
@@ -93,7 +93,7 @@ button { font-family: inherit; }
 nav { 
   display: flex; 
   background: var(--card); 
-  padding: 6px 6px 8px;
+  padding: 6px 6px 0;
   border-top: 1px solid var(--line); 
 }
 nav button { flex: 1; background: none; border: 0; padding: 6px 2px; font-size: 10px; color: var(--mute); font-weight: 600; cursor: pointer; }
