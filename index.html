@@ -32,7 +32,7 @@ body {
   margin: 0; background: var(--bg); color: var(--ink); 
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif; 
   font-size: 16px; line-height: 1.4; 
-  padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); 
+  padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px)); 
   transition: background 0.3s, color 0.3s;
   overscroll-behavior-y: none;
 }
@@ -72,22 +72,22 @@ nav button { flex: 1; background: none; border: 0; padding: 8px 2px; font-size: 
 nav button.on { color: var(--ink); }
 nav button span { display: block; font-size: 24px; line-height: 1.2; margin-bottom: 2px; }
 
-/* НОВАЯ ПАНЕЛЬ ДЕЙСТВИЙ (Плавающая по центру) */
+/* ПАНЕЛЬ ДЕЙСТВИЙ - Компактная и аккуратная */
 .bottom-actions {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   display: flex;
-  gap: 10px;
-  z-index: 90;
+  gap: 8px;
+  z-index: 95;
   pointer-events: none;
 }
 .action-btn {
   pointer-events: auto;
-  height: 52px;
+  height: 46px;
   padding: 0 24px;
-  border-radius: 26px;
+  border-radius: 23px;
   font-size: 15px;
   font-weight: 600;
   display: flex;
@@ -99,15 +99,15 @@ nav button span { display: block; font-size: 24px; line-height: 1.2; margin-bott
 }
 .action-btn:active { transform: scale(0.96); }
 .btn-exp {
-  background: var(--acc);
-  color: var(--onacc);
-  box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+  background: var(--ink); 
+  color: var(--bg);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 .btn-inc {
   background: var(--card);
   color: var(--ink);
   border: 1px solid var(--line);
-  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
 
 .sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: flex-end; }
@@ -321,7 +321,6 @@ function lstHtml(q){
 function render(){
   var h='',all=S.tx;
   
-  // ПОКАЗЫВАЕМ ПАНЕЛЬ ДЕЙСТВИЙ ТОЛЬКО НА ГЛАВНОЙ И МЕСЯЦЕ
   var showActions = ['home','stats'].indexOf(tab) >= 0;
   document.getElementById('bottom-actions').style.display = showActions ? 'flex' : 'none';
 
@@ -335,7 +334,6 @@ function render(){
     
     h+='<div class="row"><div class="card half"><div class="lbl">Доходы</div><div class="val inc">'+fmt2(m.i)+'</div></div><div class="card half"><div class="lbl">Расходы</div><div class="val exp">'+fmt2(m.e)+'</div></div></div>';
     h+=warns();
-    // Блок "В целях" удален
   }
 
   if(tab==='goals'){
