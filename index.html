@@ -32,8 +32,7 @@ body {
   margin: 0; background: var(--bg); color: var(--ink); 
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif; 
   font-size: 16px; line-height: 1.4; 
-  /* Отступ чтобы кнопки и меню не перекрывали контент */
-  padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); 
+  padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); 
   transition: background 0.3s, color 0.3s;
   overscroll-behavior-y: none;
 }
@@ -61,7 +60,6 @@ button { font-family: inherit; }
 .btn.ghost { background: var(--chip); color: var(--ink); box-shadow: none; }
 .empty { color: var(--mute); padding: 24px 0; text-align: center; font-size: 15px; }
 
-/* Нижнее меню навигации */
 nav { 
   position: fixed; left: 0; right: 0; bottom: 0; 
   background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
@@ -74,49 +72,44 @@ nav button { flex: 1; background: none; border: 0; padding: 8px 2px; font-size: 
 nav button.on { color: var(--ink); }
 nav button span { display: block; font-size: 24px; line-height: 1.2; margin-bottom: 2px; }
 
-/* НОВАЯ ПАНЕЛЬ ДЕЙСТВИЙ (Плавающая, аккуратная) */
+/* НОВАЯ ПАНЕЛЬ ДЕЙСТВИЙ (Плавающая по центру) */
 .bottom-actions {
   position: fixed;
-  left: 16px; right: 16px;
-  bottom: calc(76px + env(safe-area-inset-bottom, 0px)); /* Чуть выше меню */
-  max-width: 488px;
-  margin: 0 auto;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
   display: flex;
   gap: 10px;
   z-index: 90;
   pointer-events: none;
-  transition: opacity 0.3s;
 }
 .action-btn {
   pointer-events: auto;
-  flex: 1;
-  border-radius: 16px;
-  padding: 14px;
+  height: 52px;
+  padding: 0 24px;
+  border-radius: 26px;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   cursor: pointer;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   transition: transform 0.1s;
 }
 .action-btn:active { transform: scale(0.96); }
 .btn-exp {
-  background: var(--ink);
-  color: var(--bg);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  background: var(--acc);
+  color: var(--onacc);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.2);
 }
 .btn-inc {
   background: var(--card);
   color: var(--ink);
   border: 1px solid var(--line);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
 }
 
-/* Модальные окна */
 .sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: flex-end; }
 .sheet { 
   background: var(--card); width: 100%; max-width: 520px; margin: 0 auto; 
@@ -171,7 +164,6 @@ input.amt { font-size: 40px; font-weight: 700; text-align: center; background: t
 <body>
 <main id="app"></main>
 
-<!-- Панель действий -->
 <div class="bottom-actions" id="bottom-actions">
     <button class="action-btn btn-exp" id="btn-exp">➖ Расход</button>
     <button class="action-btn btn-inc" id="btn-inc">➕ Доход</button>
@@ -343,6 +335,7 @@ function render(){
     
     h+='<div class="row"><div class="card half"><div class="lbl">Доходы</div><div class="val inc">'+fmt2(m.i)+'</div></div><div class="card half"><div class="lbl">Расходы</div><div class="val exp">'+fmt2(m.e)+'</div></div></div>';
     h+=warns();
+    // Блок "В целях" удален
   }
 
   if(tab==='goals'){
