@@ -19,7 +19,6 @@
   --inc: #6B8E71; --exp: #B85C6C; --sav: #6A7B8C; 
   --acc: #333333; --onacc: #fff; --chip: #F0F2F5;
   color-scheme: light; box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 [data-theme="dark"] {
   --bg: #0E1522; --card: #18223A; --line: #26324D; --ink: #E8EEF7; --mute: #8E9BB3;
@@ -32,7 +31,8 @@ body {
   margin: 0; background: var(--bg); color: var(--ink); 
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif; 
   font-size: 16px; line-height: 1.4; 
-  padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px)); 
+  /* Отступ гарантирует, что контент не залезет под меню */
+  padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); 
   transition: background 0.3s, color 0.3s;
   overscroll-behavior-y: none;
 }
@@ -60,56 +60,43 @@ button { font-family: inherit; }
 .btn.ghost { background: var(--chip); color: var(--ink); box-shadow: none; }
 .empty { color: var(--mute); padding: 24px 0; text-align: center; font-size: 15px; }
 
-nav { 
-  position: fixed; left: 0; right: 0; bottom: 0; 
-  background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
-  border-top: 1px solid var(--line); display: flex; 
-  padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px)); 
-  z-index: 100; transition: background 0.3s; 
+/* ЕДИНЫЙ НИЖНИЙ БЛОК: Кнопки + Меню */
+.bottom-panel {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+  border-top: 1px solid var(--line);
 }
-[data-theme="dark"] nav { background: rgba(24, 34, 58, 0.95); }
+
+/* Панель кнопок Расход/Доход */
+.actions-row {
+  display: flex; gap: 10px; padding: 12px 16px;
+  max-width: 520px; margin: 0 auto; width: 100%;
+}
+.action-btn {
+  height: 52px; border-radius: 14px; border: none;
+  font-size: 16px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; transition: transform 0.1s;
+}
+.action-btn:active { transform: scale(0.97); }
+.btn-exp { flex: 2; background: var(--ink); color: var(--bg); }
+.btn-inc { flex: 1; background: var(--card); color: var(--ink); border: 1px solid var(--line); }
+
+/* Само меню навигации */
+nav { 
+  display: flex; 
+  background: var(--card); 
+  padding: 8px 6px;
+  border-top: 1px solid var(--line); 
+}
 nav button { flex: 1; background: none; border: 0; padding: 8px 2px; font-size: 11px; color: var(--mute); font-weight: 600; cursor: pointer; }
 nav button.on { color: var(--ink); }
 nav button span { display: block; font-size: 24px; line-height: 1.2; margin-bottom: 2px; }
 
-/* ПАНЕЛЬ ДЕЙСТВИЙ - Компактная и аккуратная */
-.bottom-actions {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-  display: flex;
-  gap: 8px;
-  z-index: 95;
-  pointer-events: none;
-}
-.action-btn {
-  pointer-events: auto;
-  height: 46px;
-  padding: 0 24px;
-  border-radius: 23px;
-  font-size: 15px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-.action-btn:active { transform: scale(0.96); }
-.btn-exp {
-  background: var(--ink); 
-  color: var(--bg);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
-.btn-inc {
-  background: var(--card);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-}
-
+/* Модальные окна */
 .sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: flex-end; }
 .sheet { 
   background: var(--card); width: 100%; max-width: 520px; margin: 0 auto; 
@@ -164,12 +151,15 @@ input.amt { font-size: 40px; font-weight: 700; text-align: center; background: t
 <body>
 <main id="app"></main>
 
-<div class="bottom-actions" id="bottom-actions">
-    <button class="action-btn btn-exp" id="btn-exp">➖ Расход</button>
-    <button class="action-btn btn-inc" id="btn-inc">➕ Доход</button>
+<!-- ОБЪЕДИНЕННАЯ ПАНЕЛЬ СНИЗУ -->
+<div class="bottom-panel" id="bottom-panel">
+    <div class="actions-row" id="actions-row">
+        <button class="action-btn btn-exp" id="btn-exp">Расход</button>
+        <button class="action-btn btn-inc" id="btn-inc">Доход</button>
+    </div>
+    <nav id="nav"></nav>
 </div>
 
-<nav id="nav"></nav>
 <div id="modal"></div>
 <script>
 (function(){
@@ -321,8 +311,9 @@ function lstHtml(q){
 function render(){
   var h='',all=S.tx;
   
+  // Управляем видимостью панели кнопок (скрываем на настройках)
   var showActions = ['home','stats'].indexOf(tab) >= 0;
-  document.getElementById('bottom-actions').style.display = showActions ? 'flex' : 'none';
+  document.getElementById('actions-row').style.display = showActions ? 'flex' : 'none';
 
   if(tab==='home'){
     var free=totalMDL(),cm=ym(new Date()),m=sums(all.filter(function(t){return mkey(t)===cm}));
