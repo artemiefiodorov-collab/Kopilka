@@ -28,14 +28,14 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html { height: 100%; background: var(--card); overflow: hidden; }
+html { height: 100%; background: var(--bg); overflow: hidden; }
 body {
   margin: 0; background: var(--bg); color: var(--ink);
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 16px; line-height: 1.4;
   position: fixed; inset: 0;
   display: flex; flex-direction: column;
-  overflow: visible;
+  overflow: hidden;
   padding-top: env(safe-area-inset-top, 0px);
   transition: background 0.3s, color 0.3s;
 }
@@ -72,7 +72,7 @@ button { font-family: inherit; }
 /* ЕДИНЫЙ НИЖНИЙ БЛОК: Кнопки + Меню (теперь в потоке, а не fixed) */
 .bottom-panel {
   flex-shrink: 0; z-index: 100;
-  background: var(--card);
+  background: var(--bg);
   margin-bottom: calc(var(--lift) * -1);
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) * 0.1);
   border-top: 1px solid var(--line);
@@ -94,7 +94,7 @@ button { font-family: inherit; }
 
 nav { 
   display: flex; 
-  background: var(--card); 
+  background: var(--bg); 
   padding: 6px 6px 0;
   border-top: 1px solid var(--line); 
 }
@@ -932,21 +932,7 @@ document.addEventListener('click',function(e){
 document.addEventListener('input',function(e){if(e.target.id==='q'){var l=document.getElementById('lst');if(l)l.innerHTML=lstHtml(e.target.value)}});
 document.addEventListener('change',function(e){var k=e.target.dataset&&e.target.dataset.wt;if(k){var v=num(e.target.value);if(v>0){S[k]=v;save()}render()}});
 
-function fitPanel(){
-  var root=document.documentElement,p=document.getElementById('bottom-panel');
-  root.style.setProperty('--lift','0px');
-  if(!navigator.standalone||!p)return;
-  var portrait=window.innerHeight>=window.innerWidth;
-  var full=portrait?Math.max(screen.width,screen.height):Math.min(screen.width,screen.height);
-  var gap=full-p.getBoundingClientRect().bottom-8;
-  if(gap>0&&gap<150)root.style.setProperty('--lift',Math.round(gap)+'px');
-}
-window.addEventListener('resize',fitPanel);
-window.addEventListener('orientationchange',function(){setTimeout(fitPanel,200)});
-window.addEventListener('load',fitPanel);
-
 initApp();
-fitPanel();
 })();
 </script>
 </body>
