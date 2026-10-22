@@ -16,15 +16,15 @@
 <style>
 :root {
   --bg: #F4F5F7; --card: #FFFFFF; --line: #E5E8EB; --ink: #111111; --mute: #8E9BB3;
-  --inc: #6B8E71; --exp: #B85C6C; --sav: #6A7B8C; --acc: #333333; 
-  --acc-grad: linear-gradient(135deg, #4A4A4A, #222222); --onacc: #fff; --chip: #F0F2F5;
+  --inc: #6B8E71; --exp: #B85C6C; --sav: #6A7B8C; 
+  --acc: #333333; --onacc: #fff; --chip: #F0F2F5;
   color-scheme: light; box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 [data-theme="dark"] {
   --bg: #0E1522; --card: #18223A; --line: #26324D; --ink: #E8EEF7; --mute: #8E9BB3;
-  --inc: #34D399; --exp: #F0707F; --sav: #60A5FA; --acc: #E8EEF7; 
-  --acc-grad: linear-gradient(135deg, #E8EEF7, #B0C4DE); --onacc: #111111; --chip: #222E4A;
+  --inc: #34D399; --exp: #F0707F; --sav: #60A5FA; 
+  --acc: #E8EEF7; --onacc: #111111; --chip: #222E4A;
   color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -32,7 +32,8 @@ body {
   margin: 0; background: var(--bg); color: var(--ink); 
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif; 
   font-size: 16px; line-height: 1.4; 
-  padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); /* Отступ под новые кнопки и меню */
+  /* Отступ чтобы кнопки и меню не перекрывали контент */
+  padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); 
   transition: background 0.3s, color 0.3s;
   overscroll-behavior-y: none;
 }
@@ -56,11 +57,11 @@ h2 { font-size: 20px; margin: 24px 0 8px; font-weight: 700; letter-spacing: -0.0
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
 .del { background: none; border: 0; color: var(--mute); font: inherit; font-size: 13px; padding: 6px 0 0; cursor: pointer; }
 button { font-family: inherit; }
-.btn { width: 100%; border: 0; border-radius: 18px; padding: 16px; font-size: 16px; font-weight: 600; background: var(--acc-grad); color: var(--onacc); cursor: pointer; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
+.btn { width: 100%; border: 0; border-radius: 18px; padding: 16px; font-size: 16px; font-weight: 600; background: var(--acc); color: var(--onacc); cursor: pointer; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
 .btn.ghost { background: var(--chip); color: var(--ink); box-shadow: none; }
 .empty { color: var(--mute); padding: 24px 0; text-align: center; font-size: 15px; }
 
-/* Нижнее меню (навигация) */
+/* Нижнее меню навигации */
 nav { 
   position: fixed; left: 0; right: 0; bottom: 0; 
   background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
@@ -73,48 +74,49 @@ nav button { flex: 1; background: none; border: 0; padding: 8px 2px; font-size: 
 nav button.on { color: var(--ink); }
 nav button span { display: block; font-size: 24px; line-height: 1.2; margin-bottom: 2px; }
 
-/* Панель кнопок действий (Расход / Доход) */
+/* НОВАЯ ПАНЕЛЬ ДЕЙСТВИЙ (Плавающая, аккуратная) */
 .bottom-actions {
   position: fixed;
-  left: 0; right: 0;
-  bottom: calc(64px + env(safe-area-inset-bottom, 0px)); /* Над навигацией */
-  padding: 10px 16px;
-  max-width: 520px;
+  left: 16px; right: 16px;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px)); /* Чуть выше меню */
+  max-width: 488px;
   margin: 0 auto;
   display: flex;
   gap: 10px;
   z-index: 90;
   pointer-events: none;
+  transition: opacity 0.3s;
 }
 .action-btn {
   pointer-events: auto;
-  border: none;
-  border-radius: 20px;
-  padding: 16px;
-  font-size: 16px;
+  flex: 1;
+  border-radius: 16px;
+  padding: 14px;
+  font-size: 15px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   transition: transform 0.1s;
 }
 .action-btn:active { transform: scale(0.96); }
 .btn-exp {
-  flex: 3;
-  background: var(--acc-grad);
-  color: var(--onacc);
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 .btn-inc {
-  flex: 1;
   background: var(--card);
   color: var(--ink);
   border: 1px solid var(--line);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-/* Модальные окна (Шторка) */
+/* Модальные окна */
 .sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: flex-end; }
 .sheet { 
   background: var(--card); width: 100%; max-width: 520px; margin: 0 auto; 
@@ -151,7 +153,7 @@ input.amt { font-size: 40px; font-weight: 700; text-align: center; background: t
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; max-height: 28vh; overflow-y: auto; padding-bottom: 4px; }
 .chip { border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 8px 12px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; }
-.chip.on { background: var(--acc-grad); color: var(--onacc); border-color: transparent; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); }
+.chip.on { background: var(--acc); color: var(--onacc); border-color: transparent; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); }
 
 .row-fields { display: flex; gap: 10px; margin-bottom: 10px; }
 .row-fields > * { margin-bottom: 0; flex: 1; }
@@ -169,10 +171,10 @@ input.amt { font-size: 40px; font-weight: 700; text-align: center; background: t
 <body>
 <main id="app"></main>
 
-<!-- Новая панель действий -->
+<!-- Панель действий -->
 <div class="bottom-actions" id="bottom-actions">
-    <button class="action-btn btn-exp" id="btn-exp">Расход</button>
-    <button class="action-btn btn-inc" id="btn-inc">Доход</button>
+    <button class="action-btn btn-exp" id="btn-exp">➖ Расход</button>
+    <button class="action-btn btn-inc" id="btn-inc">➕ Доход</button>
 </div>
 
 <nav id="nav"></nav>
@@ -327,8 +329,8 @@ function lstHtml(q){
 function render(){
   var h='',all=S.tx;
   
-  // Показываем панель действий только на Главной, Месяце и Целях (на настройках скрываем)
-  var showActions = ['home','stats','goals'].indexOf(tab) >= 0;
+  // ПОКАЗЫВАЕМ ПАНЕЛЬ ДЕЙСТВИЙ ТОЛЬКО НА ГЛАВНОЙ И МЕСЯЦЕ
+  var showActions = ['home','stats'].indexOf(tab) >= 0;
   document.getElementById('bottom-actions').style.display = showActions ? 'flex' : 'none';
 
   if(tab==='home'){
@@ -341,8 +343,6 @@ function render(){
     
     h+='<div class="row"><div class="card half"><div class="lbl">Доходы</div><div class="val inc">'+fmt2(m.i)+'</div></div><div class="card half"><div class="lbl">Расходы</div><div class="val exp">'+fmt2(m.e)+'</div></div></div>';
     h+=warns();
-    var gt=goalsTotal();
-    h+='<div class="card"><div class="lbl">В целях</div><div class="val">'+fmt2(gt)+'</div></div>';
   }
 
   if(tab==='goals'){
@@ -863,7 +863,6 @@ document.addEventListener('click',function(e){
   if(d.sort){sortMode=d.sort;render();return}
   if(d.theme){S.theme=d.theme;save();document.documentElement.setAttribute('data-theme',S.theme);render();return}
   
-  // Обработка новых кнопок "Расход" и "Доход"
   if(t.id==='btn-exp'){ addTx(null, 'exp'); return; }
   if(t.id==='btn-inc'){ addTx(null, 'inc'); return; }
   
