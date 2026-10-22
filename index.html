@@ -18,7 +18,7 @@
   --bg: #F4F5F7; --card: #FFFFFF; --line: #E5E8EB; --ink: #111111; --mute: #8E9BB3;
   --inc: #6B8E71; --exp: #B85C6C; --sav: #6A7B8C; 
   --acc: #333333; --onacc: #fff; --chip: #F0F2F5;
-  --lift: 28px;
+  --lift: 0px;
   color-scheme: light; box-sizing: border-box;
 }
 [data-theme="dark"] {
@@ -931,6 +931,17 @@ document.addEventListener('click',function(e){
 
 document.addEventListener('input',function(e){if(e.target.id==='q'){var l=document.getElementById('lst');if(l)l.innerHTML=lstHtml(e.target.value)}});
 document.addEventListener('change',function(e){var k=e.target.dataset&&e.target.dataset.wt;if(k){var v=num(e.target.value);if(v>0){S[k]=v;save()}render()}});
+
+function fitHeight(){
+  var b=document.body;
+  var portrait=window.innerHeight>=window.innerWidth;
+  var full=portrait?Math.max(screen.width,screen.height):Math.min(screen.width,screen.height);
+  if(navigator.standalone&&full>window.innerHeight){b.style.bottom='auto';b.style.height=full+'px'}
+  else{b.style.bottom='';b.style.height=''}
+}
+window.addEventListener('resize',fitHeight);
+window.addEventListener('orientationchange',function(){setTimeout(fitHeight,200)});
+fitHeight();
 
 initApp();
 })();
