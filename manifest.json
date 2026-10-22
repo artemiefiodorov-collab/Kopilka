@@ -1,20 +1,13 @@
 {
-  "name": "Копилка — учёт финансов",
+  "name": "Копилка",
   "short_name": "Копилка",
-  "description": "Личный трекер расходов, доходов и целей",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#09090B",
-  "theme_color": "#556B2F",
-  "lang": "ru",
+  "background_color": "#F4F5F7",
+  "theme_color": "#F4F5F7",
   "icons": [
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }
