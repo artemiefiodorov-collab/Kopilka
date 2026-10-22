@@ -18,6 +18,7 @@
   --bg: #F4F5F7; --card: #FFFFFF; --line: #E5E8EB; --ink: #111111; --mute: #8E9BB3;
   --inc: #6B8E71; --exp: #B85C6C; --sav: #6A7B8C; 
   --acc: #333333; --onacc: #fff; --chip: #F0F2F5;
+  --lift: 28px;
   color-scheme: light; box-sizing: border-box;
 }
 [data-theme="dark"] {
@@ -72,6 +73,7 @@ button { font-family: inherit; }
 .bottom-panel {
   flex-shrink: 0; z-index: 100;
   background: var(--card);
+  margin-bottom: calc(var(--lift) * -1);
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) * 0.1);
   border-top: 1px solid var(--line);
 }
