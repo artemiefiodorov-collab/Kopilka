@@ -2,7 +2,7 @@
 <html lang="ru" data-theme="light">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#F4F5F7">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -31,7 +31,10 @@
 body { 
   margin: 0; background: var(--bg); color: var(--ink); 
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif; 
-  font-size: 16px; line-height: 1.4; padding-bottom: 120px; transition: background 0.3s, color 0.3s;
+  font-size: 16px; line-height: 1.4; 
+  padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); /* Отступ под новые кнопки и меню */
+  transition: background 0.3s, color 0.3s;
+  overscroll-behavior-y: none;
 }
 main { max-width: 520px; margin: 0 auto; padding: 20px 16px; }
 h1 { font-size: 14px; font-weight: 600; color: var(--mute); margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -39,7 +42,7 @@ h1 { font-size: 14px; font-weight: 600; color: var(--mute); margin: 0 0 4px; tex
 .row { display: flex; gap: 12px; }
 .card { background: var(--card); border-radius: 24px; padding: 20px; margin-top: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); transition: background 0.3s; }
 .half { flex: 1; }
-.lbl { font-size: 13px; color: var(--mute); font-weight: 500; }
+.lbl { font-size: 13px; color: var(--mute); font-weight: 500; margin-bottom: 4px; display: block; }
 .val { font-size: 20px; font-weight: 700; }
 .inc { color: var(--inc); } .exp { color: var(--exp); } .sav { color: var(--sav); }
 h2 { font-size: 20px; margin: 24px 0 8px; font-weight: 700; letter-spacing: -0.02em; }
@@ -56,25 +59,103 @@ button { font-family: inherit; }
 .btn { width: 100%; border: 0; border-radius: 18px; padding: 16px; font-size: 16px; font-weight: 600; background: var(--acc-grad); color: var(--onacc); cursor: pointer; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
 .btn.ghost { background: var(--chip); color: var(--ink); box-shadow: none; }
 .empty { color: var(--mute); padding: 24px 0; text-align: center; font-size: 15px; }
-nav { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--line); display: flex; padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 5; transition: background 0.3s; }
-[data-theme="dark"] nav { background: rgba(24, 34, 58, 0.9); }
+
+/* Нижнее меню (навигация) */
+nav { 
+  position: fixed; left: 0; right: 0; bottom: 0; 
+  background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
+  border-top: 1px solid var(--line); display: flex; 
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px)); 
+  z-index: 100; transition: background 0.3s; 
+}
+[data-theme="dark"] nav { background: rgba(24, 34, 58, 0.95); }
 nav button { flex: 1; background: none; border: 0; padding: 8px 2px; font-size: 11px; color: var(--mute); font-weight: 600; cursor: pointer; }
 nav button.on { color: var(--ink); }
 nav button span { display: block; font-size: 24px; line-height: 1.2; margin-bottom: 2px; }
-.fab { position: fixed; right: 20px; bottom: calc(85px + env(safe-area-inset-bottom, 0px)); width: 64px; height: 64px; border-radius: 50%; border: 0; background: var(--acc-grad); color: var(--onacc); font-size: 32px; font-weight: 400; z-index: 4; box-shadow: 0 8px 25px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 10; display: flex; align-items: flex-end; }
-.sheet { background: var(--card); width: 100%; max-width: 520px; margin: 0 auto; border-radius: 32px 32px 0 0; padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 0px)); max-height: 92%; overflow: auto; box-shadow: 0 -10px 40px rgba(0,0,0,0.1); animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); position: relative; }
+
+/* Панель кнопок действий (Расход / Доход) */
+.bottom-actions {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px)); /* Над навигацией */
+  padding: 10px 16px;
+  max-width: 520px;
+  margin: 0 auto;
+  display: flex;
+  gap: 10px;
+  z-index: 90;
+  pointer-events: none;
+}
+.action-btn {
+  pointer-events: auto;
+  border: none;
+  border-radius: 20px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  transition: transform 0.1s;
+}
+.action-btn:active { transform: scale(0.96); }
+.btn-exp {
+  flex: 3;
+  background: var(--acc-grad);
+  color: var(--onacc);
+}
+.btn-inc {
+  flex: 1;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+/* Модальные окна (Шторка) */
+.sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: flex-end; }
+.sheet { 
+  background: var(--card); width: 100%; max-width: 520px; margin: 0 auto; 
+  border-radius: 24px 24px 0 0; 
+  max-height: 96dvh;
+  display: flex; flex-direction: column; 
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.1); 
+  animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); 
+  position: relative;
+}
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.close-btn { position: absolute; top: 16px; right: 16px; background: var(--chip); border: 0; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; color: var(--mute); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.seg { display: flex; background: var(--chip); border-radius: 16px; padding: 4px; margin-bottom: 20px; }
-.seg button { flex: 1; border: 0; background: none; padding: 12px; border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--mute); cursor: pointer; }
+
+.sheet-header { padding: 20px 20px 10px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
+.sheet-title { font-size: 18px; font-weight: 700; margin: 0; }
+.close-btn { background: var(--chip); border: 0; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; color: var(--mute); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+.sheet-content { padding: 0 20px 10px; overflow-y: auto; flex: 1; overscroll-behavior: contain; }
+
+.sheet-footer { 
+  padding: 16px 20px calc(20px + env(safe-area-inset-bottom, 0px)); 
+  background: var(--card); 
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 24px 24px;
+  flex-shrink: 0;
+}
+
+.seg { display: flex; background: var(--chip); border-radius: 16px; padding: 4px; margin-bottom: 16px; }
+.seg button { flex: 1; border: 0; background: none; padding: 10px; border-radius: 12px; font-size: 15px; font-weight: 600; color: var(--mute); cursor: pointer; }
 .seg button.on { background: var(--card); color: var(--ink); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-input, textarea, select { width: 100%; font: inherit; font-size: 16px; padding: 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); margin-bottom: 12px; }
+
+input, textarea, select { width: 100%; font: inherit; font-size: 16px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); margin-bottom: 10px; }
 input:focus, textarea:focus { outline: none; border-color: var(--acc); background: var(--card); }
-input.amt { font-size: 36px; font-weight: 700; text-align: center; background: transparent; border: 0; border-bottom: 2px solid var(--line); border-radius: 0; margin-bottom: 24px; padding: 10px 0; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-.chip { border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 10px 16px; border-radius: 24px; font-size: 14px; font-weight: 600; cursor: pointer; }
-.chip.on { background: var(--acc-grad); color: var(--onacc); border-color: transparent; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+input.amt { font-size: 40px; font-weight: 700; text-align: center; background: transparent; border: 0; border-bottom: 2px solid var(--line); border-radius: 0; margin-bottom: 16px; padding: 10px 0; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; max-height: 28vh; overflow-y: auto; padding-bottom: 4px; }
+.chip { border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 8px 12px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.chip.on { background: var(--acc-grad); color: var(--onacc); border-color: transparent; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); }
+
+.row-fields { display: flex; gap: 10px; margin-bottom: 10px; }
+.row-fields > * { margin-bottom: 0; flex: 1; }
+
 .bar { height: 8px; background: var(--chip); border-radius: 6px; overflow: hidden; margin-top: 8px; }
 .bar i { display: block; height: 100%; background: var(--inc); border-radius: 6px; transition: width 0.5s; }
 .bar.e i { background: var(--exp); } .bar.s i { background: var(--sav); }
@@ -87,7 +168,13 @@ input.amt { font-size: 36px; font-weight: 700; text-align: center; background: t
 </head>
 <body>
 <main id="app"></main>
-<button class="fab" id="fab">+</button>
+
+<!-- Новая панель действий -->
+<div class="bottom-actions" id="bottom-actions">
+    <button class="action-btn btn-exp" id="btn-exp">Расход</button>
+    <button class="action-btn btn-inc" id="btn-inc">Доход</button>
+</div>
+
 <nav id="nav"></nav>
 <div id="modal"></div>
 <script>
@@ -129,13 +216,19 @@ function norm(o){
   if(!o.accs||!o.accs.length)o.accs=[{id:1,name:'Основной',cur:'MDL',start:0}];
   
   if (o.accs) {
-      var seen = {};
-      o.accs = o.accs.filter(function(a) {
-          var key = a.name + '_' + a.cur;
-          if(seen[key]) return false;
-          seen[key] = true;
-          return true;
+      var mergedAccs = [];
+      var seenKeys = {};
+      o.accs.forEach(function(a) {
+          var key = a.name.trim().toLowerCase() + '_' + a.cur;
+          if (seenKeys[key] !== undefined) {
+              var mainId = seenKeys[key];
+              o.tx.forEach(function(t) { if(t.acc === a.id) t.acc = mainId; });
+          } else {
+              seenKeys[key] = a.id;
+              mergedAccs.push(a);
+          }
       });
+      o.accs = mergedAccs;
   }
 
   o.tx.forEach(function(t){if(!t.acc)t.acc=o.accs[0].id});
@@ -184,7 +277,7 @@ function dailyBudgetInfo(){
   return {left:left, remaining:remaining, perDay:perDay, spentToday:spentToday, leftToday:perDay-spentToday};
 }
 
-function workTime(amount){if(!S.salary||!S.hours||amount<=0)return'';var rate=S.salary/S.hours;var min=Math.round((amount/rate)*60);var h=Math.floor(min/60),m=min%60;if(h>0&&m>0)return '~'+h+' ч '+m+' мин работы';if(h>0)return '~'+h+' ч работы';if(m>0)return '~'+m+' мин работы';return 'меньше минуты работы'}
+function workTime(amount){if(!S.salary||!S.hours||amount<=0)return'';var rate=S.salary/S.hours;var min=Math.round((amount/rate)*60);var h=Math.floor(min/60),m=min%60;if(h>0&&m>0)return '~'+h+' ч '+m+' мин';if(h>0)return '~'+h+' ч';if(m>0)return '~'+m+' мин';return 'меньше минуты'}
 function catSpent(cat){var cm=ym(new Date()),s=0;S.tx.forEach(function(t){if(t.type==='exp'&&t.cat===cat&&isMDL(t)&&mkey(t)===cm)s+=t.amount});return s}
 
 function goalBal(g){
@@ -233,8 +326,10 @@ function lstHtml(q){
 
 function render(){
   var h='',all=S.tx;
-  var fabTabs=['home','stats','goals'];
-  document.getElementById('fab').style.display=fabTabs.indexOf(tab)>=0?'flex':'none';
+  
+  // Показываем панель действий только на Главной, Месяце и Целях (на настройках скрываем)
+  var showActions = ['home','stats','goals'].indexOf(tab) >= 0;
+  document.getElementById('bottom-actions').style.display = showActions ? 'flex' : 'none';
 
   if(tab==='home'){
     var free=totalMDL(),cm=ym(new Date()),m=sums(all.filter(function(t){return mkey(t)===cm}));
@@ -248,42 +343,49 @@ function render(){
     h+=warns();
     var gt=goalsTotal();
     h+='<div class="card"><div class="lbl">В целях</div><div class="val">'+fmt2(gt)+'</div></div>';
-    h+='<h2 style="margin-top:32px">Последние операции</h2><div class="card" style="margin-top:8px; padding:0 20px">';
-    var last=all.slice().sort(function(a,b){return b.date<a.date?-1:b.date>a.date?1:b.id-a.id}).slice(0,5);
-    h+=last.length?last.map(txRow).join(''):'<div class="empty">Операций пока нет. Нажми «+», чтобы добавить.</div>';
-    h+='</div>';
   }
 
   if(tab==='goals'){
     h+='<h1>Цели накоплений</h1><p class="note" style="margin-top:8px">Нажми «Сэкономил», чтобы отложить деньги в цель.</p>';
     var activeGoals=S.goals.filter(function(g){return !g.archived});
     if(!activeGoals.length)h+='<div class="card empty">Целей пока нет.</div>';
+    
     activeGoals.forEach(function(g){
       var bal=goalBal(g),p=g.target>0?Math.min(100,bal/g.target*100):0;
       
-      var lines='<div class="item" style="border:0;padding:0"><b>'+esc(g.name)+'</b><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;color:var(--acc)">'+Math.round(p)+'%</span><button class="chip" style="padding:4px 10px;font-size:12px" data-gedit="'+g.id+'">✏️ Изменить</button></div></div><div class="bar"><i style="width:'+p+'%"></i></div>';
+      var virtualSavings = 0;
+      S.savings.forEach(function(x){if(String(x.goal_id)===String(g.id)) virtualSavings += x.amount});
+      
+      var altBal = totalMDL() - virtualSavings;
+      
+      var leftDaysText = '';
+      if(g.days>0){
+          var start=new Date(g.start+'T00:00:00');
+          var passed=Math.max(0,Math.floor((Date.now()-start.getTime())/86400000));
+          var left=Math.max(0,g.days-passed);
+          var neededPerDay = left>0 && bal<g.target ? Math.max(0,(g.target-bal)/left) : 0;
+          leftDaysText = 'Осталось: ' + left + ' дн.' + (neededPerDay > 0 ? ' · По ' + fmt2(neededPerDay) + '/день' : '');
+      }
+
+      var lines = '<div class="item" style="border:0;padding:0"><b>'+esc(g.name)+'</b><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;color:var(--acc)">'+Math.round(p)+'%</span><button class="chip" style="padding:4px 10px;font-size:12px" data-gedit="'+g.id+'">✏️</button></div></div><div class="bar"><i style="width:'+p+'%"></i></div>';
+      
       lines+='<div class="lbl" style="margin-top:12px"><span style="cursor:pointer;text-decoration:underline" data-ghist="'+g.id+'">'+fmt2(bal)+' из '+fmt2(g.target)+'</span></div>';
       
-      if(g.days>0){var start=new Date(g.start+'T00:00:00');var passed=Math.max(0,Math.floor((Date.now()-start.getTime())/86400000));var left=Math.max(0,g.days-passed);var expected=g.target*Math.min(1,passed/g.days);var diff=bal-expected;
-        lines+='<div class="lbl" style="margin-top:6px">Дней прошло: '+passed+' · осталось: '+left+'</div>';
-        if(left>0&&bal<g.target){
-          var neededPerDay = Math.max(0,(g.target-bal)/left);
-          lines+='<div class="lbl">Нужно откладывать: <b>'+fmt2(neededPerDay)+'/день</b></div>';
-          
-          if(neededPerDay > 0 && bal > 0 && passed > 0) {
-            var avgPerDay = bal / passed;
-            if(avgPerDay > 0) {
-              var daysToFinish = Math.ceil((g.target - bal) / avgPerDay);
-              var finishDate = new Date(Date.now() + daysToFinish * 86400000);
-              lines+='<div class="lbl" style="color:var(--sav); margin-top:4px">🔮 При текущем темпе: <b>'+finishDate.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})+'</b></div>';
-            }
-          }
-        }
-        if(passed>0){if(diff<-100)lines+='<div class="lbl exp" style="margin-top:4px">⚠️ Отстаёшь на '+fmt2(Math.abs(diff))+'</div>';else if(diff>100)lines+='<div class="lbl inc" style="margin-top:4px">✅ Опережаешь на '+fmt2(diff)+'</div>';else lines+='<div class="lbl" style="margin-top:4px">👍 Идёшь по графику</div>'}
+      if(leftDaysText) {
+          lines+='<div class="lbl" style="margin-top:4px">'+leftDaysText+'</div>';
       }
+      
+      if(virtualSavings > 0) {
+          lines += '<div style="margin-top:12px; padding:12px; background:var(--chip); border-radius:12px;">';
+          lines += '<div class="item" style="border:0; padding:4px 0;"><span class="lbl">Твой баланс сейчас:</span><b>'+fmt2(totalMDL())+'</b></div>';
+          lines += '<div class="item" style="border:0; padding:4px 0;"><span class="lbl">Без экономии было бы:</span><b class="exp">'+fmt2(altBal)+'</b></div>';
+          lines += '</div>';
+      }
+
       lines+='<div class="chips" style="margin-top:16px"><button class="chip" data-dep="'+g.id+'">Сэкономил</button><button class="chip" data-wd="'+g.id+'">Снять</button><button class="chip" data-garch="'+g.id+'">В архив</button><button class="chip" data-gdel="'+g.id+'">Удалить</button></div></div>';
       h+='<div class="card">'+lines+'</div>';
     });
+    
     h+='<div style="margin-top:20px"><button class="btn" id="addGoal">Новая цель</button></div>';
     var arch=S.goals.filter(function(g){return g.archived});
     if(arch.length){h+='<h2>Архив</h2>';arch.forEach(function(g){var bal=goalBal(g),done=bal>=g.target;h+='<div class="card"><div class="item" style="border:0;padding:0"><b>'+esc(g.name)+'</b><span>'+(done?'🏆':'🛑')+'</span></div><div class="lbl" style="margin-top:4px">'+fmt2(bal)+' из '+fmt2(g.target)+'</div><div class="lbl">'+(done?'Достигнута':'Закрыта')+' · '+dfmt(g.start)+'</div><div class="chips" style="margin-top:10px"><button class="chip" data-gunarch="'+g.id+'">Вернуть</button></div></div>'})}
@@ -346,39 +448,63 @@ function render(){
   document.getElementById('nav').innerHTML=nav.map(function(n){return '<button data-tab="'+n[0]+'" class="'+(tab===n[0]?'on':'')+'"><span>'+n[1]+'</span>'+n[2]+'</button>'}).join('');
 }
 
-function modal(inner){
+function modal(headerHtml, contentHtml, footerHtml){
   var m=document.getElementById('modal');
-  m.innerHTML='<div class="sheet-bg" id="bg"><div class="sheet"><button class="close-btn" onclick="document.getElementById(\'modal\').innerHTML=\'\'">✕</button>'+inner+'</div></div>';
+  m.innerHTML='<div class="sheet-bg" id="bg"><div class="sheet">'
+    +'<div class="sheet-header">'+headerHtml+'<button class="close-btn" onclick="document.getElementById(\'modal\').innerHTML=\'\'">✕</button></div>'
+    +'<div class="sheet-content">'+contentHtml+'</div>'
+    +'<div class="sheet-footer">'+footerHtml+'</div>'
+    +'</div></div>';
   document.getElementById('bg').addEventListener('click',function(e){if(e.target.id==='bg')closeM()});
 }
 function closeM(){document.getElementById('modal').innerHTML=''}
 
 function num(v){return parseFloat(String(v).replace(',','.').replace(/\s/g,''))}
 
-function addTx(eid){
+function addTx(eid, defaultType){
   var ex=eid?S.tx.filter(function(x){return String(x.id)===String(eid)})[0]:null;
   var vals={a:ex?String(ex.amount):'',n:ex?ex.note:'',d:ex?ex.date:todayStr()};
-  var type=ex?ex.type:'exp',cat=ex?ex.cat:S.cats.exp[0],aid=ex?acc(ex.acc).id:S.accs[0].id;
+  
+  var type = ex ? ex.type : (defaultType || 'exp');
+  var cat = ex ? ex.cat : S.cats[type][0];
+  var aid = ex ? acc(ex.acc).id : S.accs[0].id;
+  
   function draw(){
-    modal('<div class="seg"><button data-t="exp" class="'+(type==='exp'?'on':'')+'">Расход</button><button data-t="inc" class="'+(type==='inc'?'on':'')+'">Доход</button></div>'
+    var header = '<h3 class="sheet-title">'+(ex?'Изменить':'Новая операция')+'</h3>';
+    
+    var content = '<div class="seg"><button data-t="exp" class="'+(type==='exp'?'on':'')+'">Расход</button><button data-t="inc" class="'+(type==='inc'?'on':'')+'">Доход</button></div>'
       +'<input class="amt" id="a" inputmode="decimal" placeholder="0" '+(ex?'':'autofocus ')+'value="'+esc(vals.a)+'">'
-      +'<div id="wt" class="lbl" style="margin:-10px 0 16px;font-size:13px;min-height:16px;text-align:center"></div>'
-      +(S.accs.length>1?'<div class="lbl">Счёт</div><div class="chips" style="margin-top:8px">'+S.accs.map(function(a){return '<button class="chip' + (a.id===aid?' on':'') + '" data-a="'+a.id+'">'+esc(a.name)+' · '+SYM[a.cur]+'</button>'}).join('')+'</div>':'')
-      +'<div class="lbl">Категория</div><div class="chips" style="margin-top:8px">'+clist(type,cat).map(function(c){return '<button class="chip' + (c===cat?' on':'') + '" data-c="'+esc(c)+'">'+esc(c)+'</button>'}).join('')+'</div>'
-      +'<input id="n" placeholder="Комментарий" value="'+esc(vals.n)+'"><input id="d" type="date" value="'+vals.d+'">'
-      +(ex?'<button class="btn" id="ok">Сохранить</button><div style="height:12px"></div><button class="btn ghost" id="rm">Удалить</button>'
-            :'<div class="btnrow"><button class="btn ghost" id="okNext">Сохранить и ещё</button><button class="btn" id="ok">Сохранить</button></div>'));
+      +'<div id="wt" class="lbl" style="margin:-10px 0 10px;font-size:12px;min-height:16px;text-align:center"></div>'
+      
+      +'<div class="row-fields">'
+      +(S.accs.length>1 ? '<select id="acc-select">'+S.accs.map(function(a){return '<option value="'+a.id+'" '+(a.id===aid?'selected':'')+'>'+esc(a.name)+' ('+SYM[a.cur]+')</option>'}).join('')+'</select>' : '')
+      +'<input id="d" type="date" value="'+vals.d+'">'
+      +'</div>'
+
+      +'<div class="lbl">Категория</div><div class="chips">'+clist(type,cat).map(function(c){return '<button class="chip' + (c===cat?' on':'') + '" data-c="'+esc(c)+'">'+esc(c)+'</button>'}).join('')+'</div>'
+      +'<input id="n" placeholder="Комментарий" value="'+esc(vals.n)+'">';
+
+    var footer = (ex?'<button class="btn" id="ok">Сохранить</button><div style="height:10px"></div><button class="btn ghost" id="rm">Удалить</button>'
+            :'<div class="btnrow"><button class="btn ghost" id="okNext">Сохранить и ещё</button><button class="btn" id="ok">Сохранить</button></div>');
+
+    modal(header, content, footer);
+    
     var sh=document.querySelector('.sheet');
+    
+    var sel = document.getElementById('acc-select');
+    if(sel) sel.onchange = function(e) { aid = +e.target.value; };
+
     function collect(){return {type:type,amount:num(document.getElementById('a').value),cat:cat,acc:aid,note:document.getElementById('n').value.trim(),date:document.getElementById('d').value||todayStr()}}
-    function updWT(){var a=document.getElementById('a'),wt=document.getElementById('wt');if(!a||!wt)return;var v=num(a.value);if(type==='exp'&&v>0){var txt='⏱ '+workTime(v);if(S.limits[cat]){var spent=catSpent(cat),next=spent+v,lim=S.limits[cat];var pct=Math.round(next/lim*100);if(next>lim){wt.innerHTML=esc(txt)+'<br><span style="color:#B85C6C">🚨 Превышение лимита «'+esc(cat)+'»: '+fmt2(next)+' из '+fmt2(lim)+'</span>';return}else if(next>=lim*0.8){wt.innerHTML=esc(txt)+'<br><span style="color:#C2A878">⚠️ Лимит «'+esc(cat)+'»: '+fmt2(next)+' из '+fmt2(lim)+' ('+pct+'%)</span>';return}}wt.textContent=txt}else{wt.textContent=''}}
+    function updWT(){var a=document.getElementById('a'),wt=document.getElementById('wt');if(!a||!wt)return;var v=num(a.value);if(type==='exp'&&v>0){var txt='⏱ '+workTime(v);if(S.limits[cat]){var spent=catSpent(cat),next=spent+v,lim=S.limits[cat];var pct=Math.round(next/lim*100);if(next>lim){wt.innerHTML=esc(txt)+'<br><span style="color:#B85C6C">🚨 Превышение лимита «'+esc(cat)+'»</span>';return}else if(next>=lim*0.8){wt.innerHTML=esc(txt)+'<br><span style="color:#C2A878">⚠️ Лимит «'+esc(cat)+'» ('+pct+'%)</span>';return}}wt.textContent=txt}else{wt.textContent=''}}
+    
     function doSave(keepOpen){var rec=collect();if(!(rec.amount>0)){document.getElementById('a').focus();return}
-      if(rec.type==='exp'&&S.limits[rec.cat]){var spent=catSpent(rec.cat),lim=S.limits[rec.cat];if(spent+rec.amount>lim&&!confirm('🚨 Превышение лимита «'+rec.cat+'»: '+fmt2(spent+rec.amount)+' из '+fmt2(lim)+'. Всё равно записать?'))return}
+      if(rec.type==='exp'&&S.limits[rec.cat]){var spent=catSpent(rec.cat),lim=S.limits[rec.cat];if(spent+rec.amount>lim&&!confirm('🚨 Превышение лимита «'+rec.cat+'». Всё равно записать?'))return}
       if(ex){for(var k in rec)ex[k]=rec[k]}else{rec.id=Date.now()+Math.random();S.tx.push(rec)}save();
       if(keepOpen&&!ex){vals.a='';vals.n='';draw();document.getElementById('a').focus()}else{closeM();render()}}
+    
     sh.addEventListener('click',function(e){var t=e.target.closest('button');if(!t)return;
       if(t.dataset.t){vals.a=document.getElementById('a').value;vals.n=document.getElementById('n').value;vals.d=document.getElementById('d').value;type=t.dataset.t;cat=S.cats[type][0];draw();return}
       if(t.dataset.c){cat=t.dataset.c;sh.querySelectorAll('[data-c]').forEach(function(c){c.classList.toggle('on',c.dataset.c===cat)});updWT();return}
-      if(t.dataset.a){aid=+t.dataset.a;sh.querySelectorAll('[data-a]').forEach(function(c){c.classList.toggle('on',+c.dataset.a===aid)});return}
       if(t.id==='ok'){doSave(false);return}
       if(t.id==='okNext'){doSave(true);return}
       if(t.id==='rm'&&ex&&confirm('Удалить?')){S.tx=S.tx.filter(function(x){return x!==ex});save();closeM();render()}});
@@ -392,11 +518,13 @@ function wishSheet(id){
     var name = ex ? ex.name : '';
     var amount = ex ? String(ex.amount) : '';
     
-    modal('<b style="font-size:18px">'+(ex?'Изменить хотелку':'Новая хотелка')+'</b>'
-        +'<input id="wn" placeholder="Что хочешь купить?" style="margin-top:20px" value="'+esc(name)+'">'
-        +'<input class="amt" id="wa" inputmode="decimal" placeholder="0" value="'+esc(amount)+'">'
-        +'<button class="btn" id="ok">'+(ex?'Сохранить':'Добавить')+'</button>'
-        +(ex?'<div style="height:12px"></div><button class="btn ghost" id="rm">Удалить</button>':''));
+    var header = '<h3 class="sheet-title">'+(ex?'Изменить':'Новая хотелка')+'</h3>';
+    var content = '<input id="wn" placeholder="Что хочешь купить?" style="margin-top:10px" value="'+esc(name)+'">'
+        +'<input class="amt" id="wa" inputmode="decimal" placeholder="0" value="'+esc(amount)+'">';
+    var footer = '<button class="btn" id="ok">'+(ex?'Сохранить':'Добавить')+'</button>'
+        +(ex?'<div style="height:10px"></div><button class="btn ghost" id="rm">Удалить</button>':'');
+
+    modal(header, content, footer);
         
     document.getElementById('ok').onclick=function(){
         var n=document.getElementById('wn').value.trim(), a=num(document.getElementById('wa').value);
@@ -443,8 +571,11 @@ function showWishes(){
         h += '<h2>История</h2>' + history.map(wishRow).join('');
     }
     
-    h += '<div style="margin-top:20px"><button class="btn" id="addWish">Добавить хотелку</button></div>';
-    modal(h);
+    var header = '<h3 class="sheet-title">Хотелки</h3>';
+    var content = h;
+    var footer = '<button class="btn" id="addWish">Добавить хотелку</button>';
+
+    modal(header, content, footer);
 
     var sh = document.querySelector('.sheet');
     sh.addEventListener('click', function(e){
@@ -477,8 +608,7 @@ function showGoalHistory(goalId) {
     var allItems = savings.concat(txs);
     allItems.sort(function(a,b) { return new Date(b.date) - new Date(a.date); });
     
-    var h = '<h2 style="margin-top:0">История: '+esc(g.name)+'</h2>';
-    h += '<p class="note" style="margin-bottom:12px">Нажми на запись, чтобы изменить или удалить.</p>';
+    var h = '<p class="note" style="margin:0 0 12px">Нажми на запись, чтобы изменить или удалить.</p>';
     
     if(allItems.length === 0) {
         h += '<div class="empty">Пока нет записей</div>';
@@ -489,7 +619,6 @@ function showGoalHistory(goalId) {
             var txt = isTx ? 'Списано с баланса' : 'Сэкономлено (виртуально)';
             var cls = isTx ? 'exp' : 'inc';
             
-            // ТЕПЕРЬ СТРОКА КЛИКАБЕЛЬНАЯ БЛАГОДАРЯ data-sedit
             return '<div class="item" style="padding: 12px 0; border-bottom: 1px solid var(--line); cursor:pointer" data-sedit="'+item.id+'">'
                 + '<div style="display:flex; gap:12px; align-items:center"><span style="font-size:20px">'+icon+'</span>'
                 + '<div><b>'+txt+'</b><small style="display:block; color:var(--mute)">'+(item.note || item.cat)+'</small></div></div>'
@@ -498,25 +627,40 @@ function showGoalHistory(goalId) {
         }).join('');
     }
     
-    modal(h);
+    var header = '<h3 class="sheet-title">История: '+esc(g.name)+'</h3>';
+    var content = h;
+    var footer = '<button class="btn ghost" onclick="document.getElementById(\'modal\').innerHTML=\'\'">Закрыть</button>';
+
+    modal(header, content, footer);
 }
 
-function amountSheet(title,cb,accounts){accounts=accounts||S.accs.filter(function(a){return a.cur==='MDL'});if(!accounts.length){alert('Нужен счёт в леях');return}var aid=accounts[0].id;
-  var h='<b style="font-size:18px">'+title+'</b><input class="amt" id="a" inputmode="decimal" placeholder="0" style="margin-top:20px">';
-  if(accounts.length>1){h+='<div class="lbl">Счёт</div><div class="chips" style="margin-top:8px">'+accounts.map(function(a){return '<button class="chip' + (a.id===aid?' on':'') + '" data-a="'+a.id+'">'+esc(a.name)+'</button>'}).join('')+'</div>'}
-  h+='<button class="btn" id="ok" style="margin-top:16px">Готово</button>';modal(h);
+function amountSheet(title,cb,accounts){
+  accounts=accounts||S.accs.filter(function(a){return a.cur==='MDL'});
+  if(!accounts.length){alert('Нужен счёт в леях');return}
+  var aid=accounts[0].id;
+  
+  var header = '<h3 class="sheet-title">'+title+'</h3>';
+  var content = '<input class="amt" id="a" inputmode="decimal" placeholder="0" style="margin-top:10px">';
+  if(accounts.length>1){content+='<div class="lbl">Счёт</div><div class="chips" style="margin-top:8px">'+accounts.map(function(a){return '<button class="chip' + (a.id===aid?' on':'') + '" data-a="'+a.id+'">'+esc(a.name)+'</button>'}).join('')+'</div>'}
+  var footer = '<button class="btn" id="ok">Готово</button>';
+  
+  modal(header, content, footer);
+  
   document.querySelector('.sheet').addEventListener('click',function(e){var t=e.target.closest('button');if(!t)return;
     if(t.dataset.a){aid=+t.dataset.a;document.querySelectorAll('[data-a]').forEach(function(c){c.classList.toggle('on',+c.dataset.a===aid)});return}
-    if(t.id==='ok'){var v=num(document.getElementById('a').value);if(!(v>0))return;cb(v,aid);save();closeM();render()}})}
+    if(t.id==='ok'){var v=num(document.getElementById('a').value);if(!(v>0))return;cb(v,aid);save();closeM();render()}})
+}
 
 function goalSheet(id){
     var ex = id ? S.goals.filter(function(x){return String(x.id)===String(id)})[0] : null;
     
-    modal('<b style="font-size:18px">'+(ex?'Изменить цель':'Новая цель')+'</b>'
-    +'<input id="gn" placeholder="Название" style="margin-top:20px" value="'+(ex?esc(ex.name):'')+'">'
+    var header = '<h3 class="sheet-title">'+(ex?'Изменить цель':'Новая цель')+'</h3>';
+    var content = '<input id="gn" placeholder="Название" style="margin-top:10px" value="'+(ex?esc(ex.name):'')+'">'
     +'<input id="gt" inputmode="decimal" placeholder="Сумма цели, лей" value="'+(ex?ex.target:'')+'">'
-    +'<input id="gd" inputmode="numeric" placeholder="За сколько дней (необязательно)" value="'+(ex&&ex.days>0?ex.days:'')+'">'
-    +'<button class="btn" id="ok" style="margin-top:16px">'+(ex?'Сохранить':'Создать')+'</button>');
+    +'<input id="gd" inputmode="numeric" placeholder="За сколько дней (необязательно)" value="'+(ex&&ex.days>0?ex.days:'')+'">';
+    var footer = '<button class="btn" id="ok">'+(ex?'Сохранить':'Создать')+'</button>';
+    
+    modal(header, content, footer);
     
     document.getElementById('ok').onclick=function(){
         var n=document.getElementById('gn').value.trim(),
@@ -559,31 +703,34 @@ function savingSheet(id, presetGoalId){
   var deduct = isTx; 
 
   function draw(){
-    var h = '<b style="font-size:18px">'+(ex?'Запись':'Сэкономлено')+'</b>'
-      +'<input class="amt" id="a" inputmode="decimal" placeholder="0" '+(ex?'':'autofocus ')+'value="'+esc(amt)+'" style="margin-top:20px">'
-      +'<div class="lbl">Категория</div><div class="chips" style="margin-top:8px">'+clist('save',cat).map(function(c){return '<button class="chip' + (c===cat?' on':'') + '" data-c="'+esc(c)+'">'+esc(c)+'</button>'}).join('')+'</div>';
+    var header = '<h3 class="sheet-title">'+(ex?'Запись':'Сэкономлено')+'</h3>';
+    
+    var content = '<input class="amt" id="a" inputmode="decimal" placeholder="0" '+(ex?'':'autofocus ')+'value="'+esc(amt)+'" style="margin-top:10px">'
+      +'<div class="lbl">Категория</div><div class="chips" style="margin-top:6px">'+clist('save',cat).map(function(c){return '<button class="chip' + (c===cat?' on':'') + '" data-c="'+esc(c)+'">'+esc(c)+'</button>'}).join('')+'</div>';
       
     if (activeGoals.length > 0) {
-      h += '<div class="lbl">В какую цель?</div><div class="chips" style="margin-top:8px">';
-      h += '<button class="chip' + (!goalId?' on':'') + '" data-g="">Без цели</button>';
+      content += '<div class="lbl">В какую цель?</div><div class="chips" style="margin-top:6px">';
+      content += '<button class="chip' + (!goalId?' on':'') + '" data-g="">Без цели</button>';
       activeGoals.forEach(function(g){
-        h += '<button class="chip' + (String(g.id)===String(goalId)?' on':'') + '" data-g="'+g.id+'">'+esc(g.name)+'</button>';
+        content += '<button class="chip' + (String(g.id)===String(goalId)?' on':'') + '" data-g="'+g.id+'">'+esc(g.name)+'</button>';
       });
-      h += '</div>';
+      content += '</div>';
     }
 
     if (activeGoals.length > 0 && goalId) {
-        h += '<div style="display:flex;align-items:center;gap:12px;margin:16px 0;background:var(--bg);padding:12px;border-radius:16px;">';
-        h += '<input type="checkbox" id="deductToggle" style="width:24px;height:24px;margin:0;accent-color:#333;" '+(deduct?'checked':'')+'>';
-        h += '<label for="deductToggle" style="font-size:14px;font-weight:600;color:var(--ink);">Списать с основного счета</label>';
-        h += '</div>';
+        content += '<div style="display:flex;align-items:center;gap:12px;margin:12px 0;background:var(--bg);padding:12px;border-radius:16px;">';
+        content += '<input type="checkbox" id="deductToggle" style="width:24px;height:24px;margin:0;accent-color:#333;" '+(deduct?'checked':'')+'>';
+        content += '<label for="deductToggle" style="font-size:14px;font-weight:600;color:var(--ink);">Списать с основного счета</label>';
+        content += '</div>';
     }
 
-    h += '<input id="n" placeholder="Комментарий" value="'+esc(note)+'"><input id="d" type="date" value="'+d+'">'
-      +'<button class="btn" id="ok" style="margin-top:16px">Сохранить</button>'
-      +(ex?'<div style="height:12px"></div><button class="btn ghost" id="rm">Удалить</button>':'');
+    content += '<div class="row-fields"><input id="d" type="date" value="'+d+'"></div>';
+    content += '<input id="n" placeholder="Комментарий" value="'+esc(note)+'">';
 
-    modal(h);
+    var footer = '<button class="btn" id="ok">Сохранить</button>'
+      +(ex?'<div style="height:10px"></div><button class="btn ghost" id="rm">Удалить</button>':'');
+
+    modal(header, content, footer);
     
     var sh=document.querySelector('.sheet');
     
@@ -647,20 +794,29 @@ function savingSheet(id, presetGoalId){
 }
 
 function accSheet(id){var isNew=(id==='new'||!id);var a=isNew?null:acc(+id);var cur=a?a.cur:'MDL';
-  modal('<b style="font-size:18px">'+(a?'Счёт':'Новый счёт')+'</b><input id="an" value="'+esc(a?a.name:'')+'" placeholder="Название" style="margin-top:20px">'
+  
+  var header = '<h3 class="sheet-title">'+(a?'Счёт':'Новый счёт')+'</h3>';
+  var content = '<input id="an" value="'+esc(a?a.name:'')+'" placeholder="Название" style="margin-top:10px">'
     +(a?'<p class="note">Валюта: '+SYM[a.cur]+'</p>':'<div class="chips" id="cc" style="margin-bottom:16px">'+Object.keys(SYM).map(function(c){return '<button class="chip' + (c===cur?' on':'') + '" data-cc="'+c+'">'+SYM[c]+'</button>'}).join('')+'</div>')
-    +'<input id="as" inputmode="decimal" placeholder="Начальный остаток" value="'+(a&&a.start?a.start:'')+'">'
-    +'<button class="btn" id="ok" style="margin-top:16px">Сохранить</button>'
-    +(a&&S.accs.length>1?'<div style="height:12px"></div><button class="btn ghost" id="adel">Удалить</button>':''));
+    +'<input id="as" inputmode="decimal" placeholder="Начальный остаток" value="'+(a&&a.start?a.start:'')+'">';
+  var footer = '<button class="btn" id="ok">Сохранить</button>'
+    +(a&&S.accs.length>1?'<div style="height:10px"></div><button class="btn ghost" id="adel">Удалить</button>':'');
+
+  modal(header, content, footer);
+  
   var cc=document.getElementById('cc');if(cc)cc.onclick=function(e){var b=e.target.closest('button');if(!b)return;cur=b.dataset.cc;cc.querySelectorAll('.chip').forEach(function(x){x.classList.toggle('on',x.dataset.cc===cur)})};
   document.getElementById('ok').onclick=function(){var n=document.getElementById('an').value.trim();if(!n)return;var st=num(document.getElementById('as').value)||0;if(a){a.name=n;a.start=st}else S.accs.push({id:Date.now()+Math.random(),name:n,cur:cur,start:st});save();closeM();render()};
   var dl=document.getElementById('adel');if(dl)dl.onclick=function(){if(S.tx.some(function(t){return t.acc===a.id})){alert('Есть операции на счёте');return}S.accs=S.accs.filter(function(x){return x!==a});save();closeM();render()}}
 
 function catSheet(type,old){
-  modal('<b style="font-size:18px">'+(old?'Категория':'Новая категория')+'</b><input id="cn" value="'+esc(old)+'" placeholder="Название" style="margin-top:20px">'
-    +(type==='exp'?'<input id="cl" inputmode="decimal" placeholder="Лимит на месяц (необязательно)" value="'+(old&&S.limits[old]?S.limits[old]:'')+'">':'')
-    +'<button class="btn" id="ok" style="margin-top:16px">Сохранить</button>'
-    +(old?'<div style="height:12px"></div><button class="btn ghost" id="cdel">Удалить категорию</button>':''));
+  var header = '<h3 class="sheet-title">'+(old?'Категория':'Новая категория')+'</h3>';
+  var content = '<input id="cn" value="'+esc(old)+'" placeholder="Название" style="margin-top:10px">'
+    +(type==='exp'?'<input id="cl" inputmode="decimal" placeholder="Лимит на месяц (необязательно)" value="'+(old&&S.limits[old]?S.limits[old]:'')+'">':'');
+  var footer = '<button class="btn" id="ok">Сохранить</button>'
+    +(old?'<div style="height:10px"></div><button class="btn ghost" id="cdel">Удалить категорию</button>':'');
+
+  modal(header, content, footer);
+
   document.getElementById('ok').onclick=function(){var n=document.getElementById('cn').value.trim();if(!n)return;var l=S.cats[type];
     if(old){if(n!==old&&l.indexOf(n)>=0){alert('Уже есть');return}var i=l.indexOf(old);if(i>=0)l[i]=n;
       if(type==='exp')S.tx.forEach(function(x){if(x.type==='exp'&&x.cat===old)x.cat=n});
@@ -699,7 +855,6 @@ function fromCSV(text){
 function download(name,content,type){var blob=new Blob(['\uFEFF'+content],{type:type||'text/plain;charset=utf-8'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(url)},1000)}
 
 document.addEventListener('click',function(e){
-  // ИСПРАВЛЕНИЕ: теперь обрабатываем клики не только по кнопкам, но и по элементам с data-sedit и data-ghist
   var t=e.target.closest('button, [data-sedit], [data-ghist]');
   if(!t)return;
   var d=t.dataset;
@@ -707,12 +862,16 @@ document.addEventListener('click',function(e){
   if(d.tab){tab=d.tab;render();window.scrollTo(0,0);return}
   if(d.sort){sortMode=d.sort;render();return}
   if(d.theme){S.theme=d.theme;save();document.documentElement.setAttribute('data-theme',S.theme);render();return}
-  if(t.id==='fab'){if(tab==='goals')goalSheet();else addTx();return}
+  
+  // Обработка новых кнопок "Расход" и "Доход"
+  if(t.id==='btn-exp'){ addTx(null, 'exp'); return; }
+  if(t.id==='btn-inc'){ addTx(null, 'inc'); return; }
+  
   if(t.id==='openWishes'){showWishes();return}
   if(t.id==='toggleTx'){showAllStatsTx=!showAllStatsTx;render();return}
   if(d.edit){addTx(d.edit);return}
-  if(d.sedit){savingSheet(d.sedit);return} // Теперь работает
-  if(d.ghist){showGoalHistory(d.ghist);return} // Теперь работает
+  if(d.sedit){savingSheet(d.sedit);return}
+  if(d.ghist){showGoalHistory(d.ghist);return}
   if(d.cat){catSheet(d.cat,d.name);return}
   if(d.acc){accSheet(d.acc);return}
   if(d.del){if(confirm('Удалить?')){S.tx=S.tx.filter(function(x){return String(x.id)!==d.del});save();render()}return}
@@ -745,10 +904,44 @@ document.addEventListener('click',function(e){
   if(t.id==='nm'){viewM=new Date(viewM.getFullYear(),viewM.getMonth()+1,1);render();return}
   if(t.id==='tm'){viewM=new Date();render();return}
   
-  if(t.id==='expJson'){var txt=JSON.stringify(S);modal('<b style="font-size:18px">Экспорт JSON</b><textarea id="ta" rows="6" readonly style="margin-top:16px">'+esc(txt)+'</textarea><div class="btnrow"><button class="btn ghost" id="cp">Скопировать</button><button class="btn" id="dl">Скачать</button></div>');document.getElementById('cp').onclick=function(){var ta=document.getElementById('ta');ta.select();try{navigator.clipboard.writeText(txt).then(function(){ta.value='Готово'},function(){document.execCommand('copy')})}catch(x){}};document.getElementById('dl').onclick=function(){download('kopilka-'+todayStr()+'.json',txt,'application/json')};return}
-  if(t.id==='expCsv'){var csv=toCSV();modal('<b style="font-size:18px">Экспорт CSV</b><div class="btnrow" style="margin-top:16px"><button class="btn" id="dl">Скачать CSV</button><button class="btn ghost" id="cp">Скопировать</button></div><textarea id="ta" rows="5" readonly style="margin-top:16px">'+esc(csv)+'</textarea>');document.getElementById('dl').onclick=function(){download('kopilka-'+todayStr()+'.csv',csv,'text/csv;charset=utf-8')};document.getElementById('cp').onclick=function(){var ta=document.getElementById('ta');ta.select();try{navigator.clipboard.writeText(csv).then(function(){ta.value='Готово'},function(){document.execCommand('copy')})}catch(x){}};return}
-  if(t.id==='impJson'){modal('<b style="font-size:18px">Импорт JSON</b><p class="note">Текущие данные заменятся.</p><textarea id="ta" rows="6" placeholder="JSON"></textarea><input type="file" id="fi" accept=".json"><button class="btn" id="go">Восстановить</button>');document.getElementById('fi').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){document.getElementById('ta').value=r.result};r.readAsText(f)};document.getElementById('go').onclick=function(){try{var o=JSON.parse(document.getElementById('ta').value);if(!o.tx||!o.goals)throw 0;S=norm(o);save();document.documentElement.setAttribute('data-theme',S.theme);closeM();render()}catch(x){alert('Ошибка')}};return}
-  if(t.id==='impCsv'){modal('<b style="font-size:18px">Импорт CSV</b><p class="note">Без проверки на дубликаты. Данные добавятся как есть.</p><input type="file" id="fi" accept=".csv"><textarea id="ta" rows="6" placeholder="или вставь CSV"></textarea><button class="btn" id="go">Добавить</button>');document.getElementById('fi').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){document.getElementById('ta').value=r.result};r.readAsText(f)};document.getElementById('go').onclick=function(){var txt=document.getElementById('ta').value;if(!txt.trim())return;var n=fromCSV(txt);save();closeM();render();if(n)alert('Добавлено: '+n);else alert('Файл не разобран.')};return}
+  if(t.id==='expJson'){
+    var txt=JSON.stringify(S);
+    var header='<h3 class="sheet-title">Экспорт JSON</h3>';
+    var content='<textarea id="ta" rows="6" readonly style="margin-top:10px">'+esc(txt)+'</textarea>';
+    var footer='<div class="btnrow"><button class="btn ghost" id="cp">Скопировать</button><button class="btn" id="dl">Скачать</button></div>';
+    modal(header,content,footer);
+    document.getElementById('cp').onclick=function(){var ta=document.getElementById('ta');ta.select();try{navigator.clipboard.writeText(txt).then(function(){ta.value='Готово'},function(){document.execCommand('copy')})}catch(x){}};
+    document.getElementById('dl').onclick=function(){download('kopilka-'+todayStr()+'.json',txt,'application/json')};
+    return;
+  }
+  if(t.id==='expCsv'){
+    var csv=toCSV();
+    var header='<h3 class="sheet-title">Экспорт CSV</h3>';
+    var content='<div class="btnrow" style="margin-top:10px"><button class="btn" id="dl">Скачать CSV</button><button class="btn ghost" id="cp">Скопировать</button></div><textarea id="ta" rows="5" readonly style="margin-top:16px">'+esc(csv)+'</textarea>';
+    var footer='';
+    modal(header,content,footer);
+    document.getElementById('dl').onclick=function(){download('kopilka-'+todayStr()+'.csv',csv,'text/csv;charset=utf-8')};
+    document.getElementById('cp').onclick=function(){var ta=document.getElementById('ta');ta.select();try{navigator.clipboard.writeText(csv).then(function(){ta.value='Готово'},function(){document.execCommand('copy')})}catch(x){}};
+    return;
+  }
+  if(t.id==='impJson'){
+    var header='<h3 class="sheet-title">Импорт JSON</h3>';
+    var content='<p class="note">Текущие данные заменятся.</p><textarea id="ta" rows="6" placeholder="JSON"></textarea><input type="file" id="fi" accept=".json">';
+    var footer='<button class="btn" id="go">Восстановить</button>';
+    modal(header,content,footer);
+    document.getElementById('fi').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){document.getElementById('ta').value=r.result};r.readAsText(f)};
+    document.getElementById('go').onclick=function(){try{var o=JSON.parse(document.getElementById('ta').value);if(!o.tx||!o.goals)throw 0;S=norm(o);save();document.documentElement.setAttribute('data-theme',S.theme);closeM();render()}catch(x){alert('Ошибка')}};
+    return;
+  }
+  if(t.id==='impCsv'){
+    var header='<h3 class="sheet-title">Импорт CSV</h3>';
+    var content='<p class="note">Без проверки на дубликаты. Данные добавятся как есть.</p><input type="file" id="fi" accept=".csv"><textarea id="ta" rows="6" placeholder="или вставь CSV"></textarea>';
+    var footer='<button class="btn" id="go">Добавить</button>';
+    modal(header,content,footer);
+    document.getElementById('fi').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){document.getElementById('ta').value=r.result};r.readAsText(f)};
+    document.getElementById('go').onclick=function(){var txt=document.getElementById('ta').value;if(!txt.trim())return;var n=fromCSV(txt);save();closeM();render();if(n)alert('Добавлено: '+n);else alert('Файл не разобран.')};
+    return;
+  }
 });
 
 document.addEventListener('input',function(e){if(e.target.id==='q'){var l=document.getElementById('lst');if(l)l.innerHTML=lstHtml(e.target.value)}});
