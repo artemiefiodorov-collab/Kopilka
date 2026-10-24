@@ -31,12 +31,19 @@ body {
   margin: 0; background: var(--bg); color: var(--ink); 
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif; 
   font-size: 16px; line-height: 1.4; 
-  padding-top: calc(20px + env(safe-area-inset-top, 0px)); 
+  
+  /* ИСПРАВЛЕНИЕ ВЕРХА: max(50px) защищает от глюков safe-area на iOS */
+  padding-top: max(50px, env(safe-area-inset-top, 0px)); 
   padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px)); 
+  
   transition: background 0.3s, color 0.3s;
   overscroll-behavior-y: none;
 }
-main { max-width: 520px; margin: 0 auto; padding: 0 16px; }
+main { 
+  max-width: 520px; 
+  margin: 0 auto; 
+  padding: 16px; /* Отступы со всех сторон, чтобы текст не лип к краям */
+}
 h1 { font-size: 14px; font-weight: 600; color: var(--mute); margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.5px; }
 .big { font-size: 48px; font-weight: 700; letter-spacing: -0.04em; margin: 0; line-height: 1.1; }
 .row { display: flex; gap: 12px; }
@@ -60,12 +67,15 @@ button { font-family: inherit; }
 .btn.ghost { background: var(--chip); color: var(--ink); box-shadow: none; }
 .empty { color: var(--mute); padding: 24px 0; text-align: center; font-size: 15px; }
 
+/* ЕДИНЫЙ НИЖНИЙ БЛОК */
 .bottom-panel {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
   background: var(--bg);
   display: flex; flex-direction: column;
   border-top: 1px solid var(--line);
 }
+
+/* Панель кнопок Расход/Доход */
 .actions-row {
   display: flex; gap: 8px; padding: 10px 16px;
   max-width: 520px; margin: 0 auto; width: 100%;
@@ -80,6 +90,7 @@ button { font-family: inherit; }
 .btn-exp { flex: 2; background: var(--ink); color: var(--bg); }
 .btn-inc { flex: 1; background: var(--card); color: var(--ink); border: 1px solid var(--line); }
 
+/* Само меню навигации (Safe Area перенесена сюда) */
 nav { 
   display: flex; 
   background: var(--card); 
@@ -90,6 +101,7 @@ nav button { flex: 1; background: none; border: 0; padding: 6px 2px; font-size: 
 nav button.on { color: var(--ink); }
 nav button span { display: block; font-size: 22px; line-height: 1.2; margin-bottom: 2px; }
 
+/* Модальные окна */
 .sheet-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: flex-end; }
 .sheet { 
   background: var(--card); width: 100%; max-width: 520px; margin: 0 auto; 
@@ -752,7 +764,7 @@ function amountSheet(title,cb,accounts){
   
   var header = '<h3 class="sheet-title">'+title+'</h3>';
   var content = '<input class="amt" id="a" inputmode="decimal" placeholder="0" style="margin-top:10px">';
-  if(accounts.length>1){content+='<div class="lbl">Счёт</div><div class="chips" style="margin-top:8px">'+accounts.map(function(a){return '<button class="chip" + (a.id===aid?" on":"") + " data-a="'+a.id+'">'+esc(a.name)+'</button>'}).join('')+'</div>'}
+  if(accounts.length>1){content+='<div class="lbl">Счёт</div><div class="chips" style="margin-top:8px">'+accounts.map(function(a){return '<button class="chip' + (a.id===aid?' on':'') + '" data-a="'+a.id+'">'+esc(a.name)+'</button>'}).join('')+'</div>'}
   var footer = '<button class="btn" id="ok">Готово</button>';
   
   modal(header, content, footer);
@@ -911,7 +923,7 @@ function accSheet(id){var isNew=(id==='new'||!id);var a=isNew?null:acc(+id);var 
   
   var header = '<h3 class="sheet-title">'+(a?'Счёт':'Новый счёт')+'</h3>';
   var content = '<input id="an" value="'+esc(a?a.name:'')+'" placeholder="Название" style="margin-top:10px">'
-    +(a?'<p class="note">Валюта: '+SYM[a.cur]+'</p>':'<div class="chips" id="cc" style="margin-bottom:16px">'+Object.keys(SYM).map(function(c){return '<button class="chip" + (c===cur?" on":"") + " data-cc="'+c+'">'+SYM[c]+'</button>'}).join('')+'</div>')
+    +(a?'<p class="note">Валюта: '+SYM[a.cur]+'</p>':'<div class="chips" id="cc" style="margin-bottom:16px">'+Object.keys(SYM).map(function(c){return '<button class="chip' + (c===cur?' on':'') + '" data-cc="'+c+'">'+SYM[c]+'</button>'}).join('')+'</div>')
     +'<input id="as" inputmode="decimal" placeholder="Начальный остаток" value="'+(a&&a.start?a.start:'')+'">';
   var footer = '<button class="btn" id="ok">Сохранить</button>'
     +(a&&S.accs.length>1?'<div style="height:10px"></div><button class="btn ghost" id="adel">Удалить</button>':'');
