@@ -179,6 +179,7 @@ var COL=['#8A9A5B','#B85C6C','#6A7B8C','#C2A878','#7E7E7E','#9E7B9B','#5F8A8B','
 var S=null;
 var showAllStatsTx = false;
 var sortMode = 'date_desc';
+var catFilter = null;
 
 // ФУНКЦИЯ ВИБРАЦИИ
 var hapticLabel = null;
@@ -394,6 +395,7 @@ function lstHtml(q){
     q=(q||'').trim().toLowerCase();
     if(q) l=S.tx.filter(function(t){return (t.cat+' '+(t.note||'')+' '+t.amount+' '+acc(t.acc).name).toLowerCase().indexOf(q)>=0});
     else l=S.tx.filter(function(t){return mkey(t)===ym(viewM)});
+    if(catFilter) l=l.filter(function(t){return t.cat===catFilter&&t.type==='exp'&&isMDL(t)&&!t.goal_id});
 
     l.sort(function(a,b){
         if(sortMode === 'date_desc') return b.date < a.date ? -1 : (b.date > a.date ? 1 : b.id - a.id);
@@ -405,6 +407,28 @@ function lstHtml(q){
 
     l = l.slice(0, 220); 
     return l.length ? l.map(txRow).join('') : '<div class="empty">'+(q?'Ничего не найдено.':'Операций нет.')+'</div>';
+}
+
+function forecastCard(){
+  var n=new Date(),d=n.getDate(),cm=ym(n),dim=daysInMonth(n.getFullYear(),n.getMonth());
+  var cur=sums(S.tx.filter(function(t){return mkey(t)===cm})).e;
+  var prev=sums(S.tx.filter(function(t){return mkey(t)===cm-1&&+t.date.split('-')[2]<=d})).e;
+  var h='';
+  if(cur>0)h+='<div class="item" style="border:0;padding:4px 0"><span class="lbl" style="margin:0">Прогноз расходов на месяц</span><b>'+fmt2(cur/d*dim)+'</b></div>';
+  if(prev>0){var p=Math.round((cur-prev)/prev*100);h+='<div class="item" style="border:0;padding:4px 0"><span class="lbl" style="margin:0">К прошлому месяцу (те же дни)</span><b class="'+(p<=0?'inc':'exp')+'">'+(p>0?'+':'')+p+'%</b></div>'}
+  return h?'<div class="card" style="padding:16px 20px">'+h+'</div>':'';
+}
+
+function yearCard(){
+  var y=viewM.getFullYear(),ti=0,te=0,rows='';
+  for(var m=0;m<12;m++){
+    var s=sums(S.tx.filter(function(t){return mkey(t)===y*12+m}));
+    ti+=s.i;te+=s.e;
+    if(s.i||s.e){var nm=new Date(y,m,1).toLocaleDateString('ru-RU',{month:'short'});rows+='<div class="item" style="font-size:14px"><span class="lbl" style="margin:0;text-transform:capitalize">'+nm+'</span><span style="text-align:right"><b class="inc">+'+fmt2(s.i)+'</b><br><b class="exp">−'+fmt2(s.e)+'</b></span></div>'}
+  }
+  if(!rows)return '<h2>'+y+' год</h2><div class="card" style="margin-top:8px"><div class="empty">Нет данных за год.</div></div>';
+  rows+='<div class="item" style="border:0"><b>Итого</b><span style="text-align:right"><b class="inc">+'+fmt2(ti)+'</b><br><b class="exp">−'+fmt2(te)+'</b></span></div>';
+  return '<h2>'+y+' год</h2><div class="card" style="margin-top:8px">'+rows+'</div>';
 }
 
 function render(){
@@ -422,7 +446,7 @@ function render(){
     h+='<div class="card" style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="lbl">Бюджет на сегодня</span><span class="lbl">'+dbHome.left+' дн. до конца</span></div><div style="display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 12px"><b class="'+(okHome?'inc':'exp')+'" style="font-size:32px;font-weight:700">'+fmt2(dbHome.leftToday)+'</b><span class="lbl">из '+fmt2(dbHome.perDay)+'</span></div><div class="bar'+(okHome?'':' e')+'" style="margin:0"><i style="width:'+pctHome+'%"></i></div></div>';
     
     h+='<div class="row"><div class="card half"><div class="lbl">Доходы</div><div class="val inc">'+fmt2(m.i)+'</div></div><div class="card half"><div class="lbl">Расходы</div><div class="val exp">'+fmt2(m.e)+'</div></div></div>';
-    h+=warns();
+    h+=forecastCard();h+=warns();
   }
 
   if(tab==='goals'){
@@ -506,14 +530,15 @@ function render(){
         h+=donut(by,keys,s.e)+keys.map(function(k,i){
             var v=by[k];
             var p = v/s.e*100;
-            return '<div style="padding:10px 0"><div class="item" style="border:0;padding:0"><span><i class="dot" style="background:'+COL[i%COL.length]+'"></i>'+esc(k)+'</span><b>'+fmt2(v)+'</b></div><div class="bar e"><i style="width:'+p+'%;background:'+COL[i%COL.length]+'"></i></div></div>';
+            return '<div style="padding:10px 0;cursor:pointer" data-fcat="'+esc(k)+'"><div class="item" style="border:0;padding:0"><span><i class="dot" style="background:'+COL[i%COL.length]+'"></i>'+esc(k)+'</span><b>'+fmt2(v)+'</b></div><div class="bar e"><i style="width:'+p+'%;background:'+COL[i%COL.length]+'"></i></div></div>';
         }).join('');
     }else h+='<div class="empty">В этом месяце расходов нет.</div>';
-    h+='</div><h2>Последние 6 месяцев</h2><div class="card" style="margin-top:8px">'+trend()+'</div>';
+    h+='</div><h2>Последние 6 месяцев</h2><div class="card" style="margin-top:8px">'+trend()+'</div>'+yearCard();
     
     h+='<div style="margin-top:24px"><button class="btn ghost" id="toggleTx">📁 '+(showAllStatsTx?'Скрыть операции за месяц':'Посмотреть все операции за месяц ('+mm.length+')')+'</button></div>';
     if(showAllStatsTx){
       h+='<h2>Операции за месяц</h2>';
+      if(catFilter)h+='<div class="chips"><button class="chip on" data-fclear="1">'+esc(catFilter)+' ✕</button></div>';
       
       h+='<div class="chips" style="margin-bottom:8px">';
       h+='<button class="chip'+(sortMode==='date_desc'?' on':'')+'" data-sort="date_desc">Новые</button>';
@@ -997,12 +1022,14 @@ function fromCSV(text){
 function download(name,content,type){var blob=new Blob(['\uFEFF'+content],{type:type||'text/plain;charset=utf-8'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(url)},1000)}
 
 document.addEventListener('click',function(e){
-  var t=e.target.closest('button, [data-sedit], [data-ghist]');
+  var t=e.target.closest('button, [data-sedit], [data-ghist], [data-fcat]');
   if(!t)return;
   var d=t.dataset;
   
   if(d.tab){tab=d.tab;render();window.scrollTo(0,0);haptic(5);return}
   if(d.sort){sortMode=d.sort;render();return}
+  if(d.fcat){catFilter=d.fcat;showAllStatsTx=true;render();setTimeout(function(){var el=document.getElementById('lst');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},50);haptic(5);return}
+  if(d.fclear){catFilter=null;render();haptic(5);return}
   if(d.theme){S.theme=d.theme;save();document.documentElement.setAttribute('data-theme',S.theme);render();haptic(5);return}
   
   if(t.id==='btn-exp'){ addTx(null, 'exp'); return; }
