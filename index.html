@@ -181,29 +181,6 @@ var showAllStatsTx = false;
 var sortMode = 'date_desc';
 var catFilter = null;
 
-// ФУНКЦИЯ ВИБРАЦИИ
-var hapticLabel = null;
-function haptic(ms) {
-    if (S && S.hapticEnabled === false) return;
-    if (navigator.vibrate) {
-        try { navigator.vibrate(ms || 10); return; } catch(e) {}
-    }
-    // iOS: Vibration API нет, но переключатель <input switch> даёт тактильный отклик
-    try {
-        if (!hapticLabel) {
-            hapticLabel = document.createElement('label');
-            hapticLabel.setAttribute('aria-hidden', 'true');
-            hapticLabel.style.cssText = 'position:fixed;left:-100px;top:-100px;width:1px;height:1px;opacity:0;pointer-events:none;';
-            var inp = document.createElement('input');
-            inp.type = 'checkbox';
-            inp.setAttribute('switch', '');
-            hapticLabel.appendChild(inp);
-            document.body.appendChild(hapticLabel);
-        }
-        hapticLabel.click();
-    } catch(e) {}
-}
-
 // УВЕДОМЛЕНИЯ
 function sendNotif(title, body) {
     if (!("Notification" in window) || Notification.permission !== 'granted') return;
@@ -288,7 +265,6 @@ function norm(o){
   o.cushionAmount=typeof o.cushionAmount==='number'?o.cushionAmount:7000;
   
   o.notifEnabled = o.notifEnabled || false;
-  o.hapticEnabled = o.hapticEnabled !== false; 
   o.notifs = o.notifs || {};
   
   if(!o.accs||!o.accs.length)o.accs=[{id:1,name:'Основной',cur:'MDL',start:0}];
@@ -434,18 +410,12 @@ function yearCard(){
 
 function cushBal(){var b=0;S.tx.forEach(function(t){if(t.goal_id==='cushion')b+=t.type==='exp'?t.amount:-t.amount});return Math.max(0,b)}
 
-function cushionCard(){
-  var b=cushBal();
-  if(!(b>0)&&!(S.cushionAmount>0))return '';
-  return '<div class="card" style="padding:16px 20px"><div class="item" style="border:0;padding:0"><span class="lbl" style="margin:0">🛟 Подушка безопасности</span><b class="sav">'+fmt2(b)+'</b></div></div>';
-}
-
 function askCushion(rec){
   var a=S.cushionAmount||0;
   if(!(a>0)||rec.type!=='inc'||rec.cat!=='Зарплата'||!isMDL(rec)||rec.goal_id)return;
   var v=Math.min(a,rec.amount);
-  if(confirm('Отложить '+fmt2(v)+' в подушку безопасности?'))
-    S.tx.push({id:Date.now()+Math.random(),type:'exp',amount:v,cat:'Подушка',acc:rec.acc,note:'В подушку безопасности',date:rec.date,goal_id:'cushion'});
+  if(confirm('Отложить '+fmt2(v)+' в подушку?'))
+    S.tx.push({id:Date.now()+Math.random(),type:'exp',amount:v,cat:'Подушка',acc:rec.acc,note:'В подушку',date:rec.date,goal_id:'cushion'});
 }
 
 function render(){
@@ -463,7 +433,7 @@ function render(){
     h+='<div class="card" style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="lbl">Бюджет на сегодня</span><span class="lbl">'+dbHome.left+' дн. до конца</span></div><div style="display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 12px"><b class="'+(okHome?'inc':'exp')+'" style="font-size:32px;font-weight:700">'+fmt2(dbHome.leftToday)+'</b><span class="lbl">из '+fmt2(dbHome.perDay)+'</span></div><div class="bar'+(okHome?'':' e')+'" style="margin:0"><i style="width:'+pctHome+'%"></i></div></div>';
     
     h+='<div class="row"><div class="card half"><div class="lbl">Доходы</div><div class="val inc">'+fmt2(m.i)+'</div></div><div class="card half"><div class="lbl">Расходы</div><div class="val exp">'+fmt2(m.e)+'</div></div></div>';
-    h+=forecastCard();h+=cushionCard();h+=warns();
+    h+=forecastCard();h+=warns();
   }
 
   if(tab==='goals'){
@@ -575,12 +545,11 @@ function render(){
     
     h+='<div class="card"><b>Тема оформления</b><div class="chips" style="margin:8px 0 0"><button class="chip'+(S.theme==='light'?' on':'')+'" data-theme="light">Светлая</button><button class="chip'+(S.theme==='dark'?' on':'')+'" data-theme="dark">Тёмная</button></div></div>';
     
-    h+='<div class="card"><b>Оповещения и вибрация</b>';
+    h+='<div class="card"><b>Оповещения</b>';
     h+='<div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px;"><span>Умные уведомления</span><input type="checkbox" id="notifToggle" style="width:24px; height:24px; margin:0; accent-color:var(--acc);" '+(S.notifEnabled?'checked':'')+'></div>';
-    h+='<div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px;"><span>Вибрация (Haptics)</span><input type="checkbox" id="hapticToggle" style="width:24px; height:24px; margin:0; accent-color:var(--acc);" '+(S.hapticEnabled!==false?'checked':'')+'></div>';
     h+='</div>';
 
-    h+='<div class="card"><b>🛟 Подушка безопасности</b><p class="note">Откладывается с зарплаты и не входит в свободные деньги и бюджет на день.</p><div class="lbl">Откладывать с зарплаты, лей</div><input data-wt="cushionAmount" inputmode="decimal" value="'+(S.cushionAmount||0)+'" style="margin:6px 0 12px"><div class="item" style="border:0;padding:0 0 12px"><span class="lbl" style="margin:0">Накоплено</span><b class="sav">'+fmt2(cushBal())+'</b></div><div class="btnrow"><button class="btn" id="cushDep">Пополнить</button><button class="btn ghost" id="cushWd">Снять</button></div></div>';
+    h+='<div class="card"><b>🛟 Подушка</b><p class="note">Откладывается с зарплаты и не входит в свободные деньги и бюджет на день.</p><div class="lbl">Откладывать с зарплаты, лей</div><input data-wt="cushionAmount" inputmode="decimal" value="'+(S.cushionAmount||0)+'" style="margin:6px 0 12px"><div class="item" style="border:0;padding:0 0 12px"><span class="lbl" style="margin:0">Накоплено</span><b class="sav">'+fmt2(cushBal())+'</b></div><div class="btnrow"><button class="btn" id="cushDep">Пополнить</button><button class="btn ghost" id="cushWd">Снять</button></div></div>';
     h+='<div class="card"><b>Счета</b><p class="note">Счета в EUR/USD показываются отдельно.</p><div class="chips" style="margin:0">'+S.accs.map(function(a){return '<button class="chip" data-acc="'+a.id+'">'+esc(a.name)+' · '+SYM[a.cur]+'</button>'}).join('')+'<button class="chip" data-acc="new">+ Добавить</button></div></div>';
     h+='<div class="card"><b>Работа и деньги</b><div class="row"><div style="flex:1"><div class="lbl">Зарплата, лей/мес</div><input data-wt="salary" inputmode="decimal" value="'+S.salary+'" style="margin:6px 0 0"></div><div style="flex:1"><div class="lbl">Часов/мес</div><input data-wt="hours" inputmode="decimal" value="'+S.hours+'" style="margin:6px 0 0"></div></div></div>';
     
@@ -609,7 +578,7 @@ function render(){
                       S.notifEnabled = true;
                       save();
                       sendNotif("Уведомления включены", "Теперь мы будем напоминать вам о лимитах.");
-                      haptic(20);
+                      
                   } else {
                       alert("Разрешение не получено. Включите уведомления в настройках iPhone/Android.");
                       e.target.checked = false;
@@ -619,14 +588,6 @@ function render(){
               S.notifEnabled = false;
               save();
           }
-      };
-  }
-  var ht = document.getElementById('hapticToggle');
-  if (ht) {
-      ht.onchange = function(e) {
-          S.hapticEnabled = e.target.checked;
-          save();
-          if (S.hapticEnabled) haptic(20);
       };
   }
 }
@@ -683,7 +644,7 @@ function addTx(eid, defaultType){
     function doSave(keepOpen){var rec=collect();if(!(rec.amount>0)){document.getElementById('a').focus();return}
       if(rec.type==='exp'&&S.limits[rec.cat]){var spent=catSpent(rec.cat),lim=S.limits[rec.cat];if(spent+rec.amount>lim&&!confirm('🚨 Превышение лимита «'+rec.cat+'». Всё равно записать?'))return}
       if(ex){for(var k in rec)ex[k]=rec[k]}else{rec.id=Date.now()+Math.random();S.tx.push(rec);askCushion(rec)}save();
-      haptic(15); 
+       
       if(keepOpen&&!ex){vals.a='';vals.n='';draw();document.getElementById('a').focus()}else{closeM();render()}}
     
     sh.addEventListener('click',function(e){var t=e.target.closest('button');if(!t)return;
@@ -691,7 +652,7 @@ function addTx(eid, defaultType){
       if(t.dataset.c){cat=t.dataset.c;sh.querySelectorAll('[data-c]').forEach(function(c){c.classList.toggle('on',c.dataset.c===cat)});updWT();return}
       if(t.id==='ok'){doSave(false);return}
       if(t.id==='okNext'){doSave(true);return}
-      if(t.id==='rm'&&ex&&confirm('Удалить?')){S.tx=S.tx.filter(function(x){return x!==ex});save();haptic(30);closeM();render()}});
+      if(t.id==='rm'&&ex&&confirm('Удалить?')){S.tx=S.tx.filter(function(x){return x!==ex});save();closeM();render()}});
     sh.addEventListener('input',updWT);updWT();
   }
   draw();
@@ -715,13 +676,13 @@ function wishSheet(id){
         if(!n || !(a>0)) return;
         if(ex){ ex.name=n; ex.amount=a; }
         else { S.wishes.push({id: Date.now()+Math.random(), name: n, amount: a, date: todayStr(), status: 'pending'}); }
-        save(); haptic(15); closeM(); render();
+        save();  closeM(); render();
     };
     var rm = document.getElementById('rm');
     if(rm) rm.onclick=function(){
         if(confirm('Удалить?')){
             S.wishes = S.wishes.filter(function(x){return x !== ex});
-            save(); haptic(30); closeM(); render();
+            save();  closeM(); render();
         }
     };
 }
@@ -771,13 +732,13 @@ function showWishes(){
             var w = S.wishes.filter(function(x){return String(x.id)===t.dataset.wbuy})[0];
             w.status = 'bought';
             S.tx.push({id:Date.now()+Math.random(), type:'exp', amount:w.amount, cat:'Прочее', acc:S.accs[0].id, note:w.name, date:todayStr()});
-            save(); haptic(20); showWishes(); render(); return;
+            save();  showWishes(); render(); return;
         }
         if(t.dataset.wskip) {
             var w = S.wishes.filter(function(x){return String(x.id)===t.dataset.wskip})[0];
             w.status = 'skipped';
             S.savings.push({id:Date.now()+Math.random(), amount:w.amount, cat:'Импульсивные', note:w.name, date:todayStr()});
-            save(); haptic(20); showWishes(); render(); return;
+            save();  showWishes(); render(); return;
         }
     });
 }
@@ -832,7 +793,7 @@ function amountSheet(title,cb,accounts){
   
   document.querySelector('.sheet').addEventListener('click',function(e){var t=e.target.closest('button');if(!t)return;
     if(t.dataset.a){aid=+t.dataset.a;document.querySelectorAll('[data-a]').forEach(function(c){c.classList.toggle('on',+c.dataset.a===aid)});return}
-    if(t.id==='ok'){var v=num(document.getElementById('a').value);if(!(v>0))return;cb(v,aid);save();haptic(15);closeM();render()}})
+    if(t.id==='ok'){var v=num(document.getElementById('a').value);if(!(v>0))return;cb(v,aid);save();closeM();render()}})
 }
 
 function goalSheet(id){
@@ -859,7 +820,7 @@ function goalSheet(id){
         } else {
             S.goals.push({id:Date.now()+Math.random(),name:n,target:t,saved_base:0,start:todayStr(),days:d,archived:false});
         }
-        save(); haptic(15); closeM(); render();
+        save();  closeM(); render();
     };
 }
 
@@ -967,13 +928,13 @@ function savingSheet(id, presetGoalId){
             S.savings.push(rec);
         }
         
-        save(); haptic(15); closeM(); render();
+        save();  closeM(); render();
         return;
       }
       if(t.id==='rm'&&ex&&confirm('Удалить?')){
           if(isTx) S.tx = S.tx.filter(function(x){return x!==ex});
           else S.savings = S.savings.filter(function(x){return x!==ex});
-          save(); haptic(30); closeM(); render();
+          save();  closeM(); render();
       }
     });
   }
@@ -992,8 +953,8 @@ function accSheet(id){var isNew=(id==='new'||!id);var a=isNew?null:acc(+id);var 
   modal(header, content, footer);
   
   var cc=document.getElementById('cc');if(cc)cc.onclick=function(e){var b=e.target.closest('button');if(!b)return;cur=b.dataset.cc;cc.querySelectorAll('.chip').forEach(function(x){x.classList.toggle('on',x.dataset.cc===cur)})};
-  document.getElementById('ok').onclick=function(){var n=document.getElementById('an').value.trim();if(!n)return;var st=num(document.getElementById('as').value)||0;if(a){a.name=n;a.start=st}else S.accs.push({id:Date.now()+Math.random(),name:n,cur:cur,start:st});save();haptic(15);closeM();render()};
-  var dl=document.getElementById('adel');if(dl)dl.onclick=function(){if(S.tx.some(function(t){return t.acc===a.id})){alert('Есть операции на счёте');return}S.accs=S.accs.filter(function(x){return x!==a});save();haptic(30);closeM();render()}}
+  document.getElementById('ok').onclick=function(){var n=document.getElementById('an').value.trim();if(!n)return;var st=num(document.getElementById('as').value)||0;if(a){a.name=n;a.start=st}else S.accs.push({id:Date.now()+Math.random(),name:n,cur:cur,start:st});save();closeM();render()};
+  var dl=document.getElementById('adel');if(dl)dl.onclick=function(){if(S.tx.some(function(t){return t.acc===a.id})){alert('Есть операции на счёте');return}S.accs=S.accs.filter(function(x){return x!==a});save();closeM();render()}}
 
 function catSheet(type,old){
   var header = '<h3 class="sheet-title">'+(old?'Категория':'Новая категория')+'</h3>';
@@ -1010,8 +971,8 @@ function catSheet(type,old){
       if(type==='inc')S.tx.forEach(function(x){if(x.type==='inc'&&x.cat===old)x.cat=n});
       if(type==='save')S.savings.forEach(function(x){if(x.cat===old)x.cat=n});
       delete S.limits[old]}else{if(l.indexOf(n)>=0){alert('Уже есть');return}l.push(n)}
-    var lm=type==='exp'?num(document.getElementById('cl')?document.getElementById('cl').value:''):0;if(lm>0)S.limits[n]=lm;save();haptic(15);closeM();render()};
-  var dl=document.getElementById('cdel');if(dl)dl.onclick=function(){if(S.cats[type].length<2){alert('Нужна хотя бы одна');return}if(!confirm('Удалить?'))return;S.cats[type]=S.cats[type].filter(function(c){return c!==old});delete S.limits[old];save();haptic(30);closeM();render()}}
+    var lm=type==='exp'?num(document.getElementById('cl')?document.getElementById('cl').value:''):0;if(lm>0)S.limits[n]=lm;save();closeM();render()};
+  var dl=document.getElementById('cdel');if(dl)dl.onclick=function(){if(S.cats[type].length<2){alert('Нужна хотя бы одна');return}if(!confirm('Удалить?'))return;S.cats[type]=S.cats[type].filter(function(c){return c!==old});delete S.limits[old];save();closeM();render()}}
 
 function findG(id){return S.goals.filter(function(g){return String(g.id)===id})[0]}
 function csvEsc(v){v=String(v==null?'':v);if(v.indexOf(',')>=0||v.indexOf('"')>=0||v.indexOf('\n')>=0)return '"'+v.replace(/"/g,'""')+'"';return v}
@@ -1046,13 +1007,13 @@ document.addEventListener('click',function(e){
   if(!t)return;
   var d=t.dataset;
   
-  if(d.tab){tab=d.tab;render();window.scrollTo(0,0);haptic(5);return}
+  if(d.tab){tab=d.tab;render();window.scrollTo(0,0);return}
   if(d.sort){sortMode=d.sort;render();return}
-  if(d.fcat){catFilter=d.fcat;showAllStatsTx=true;render();setTimeout(function(){var el=document.getElementById('lst');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},50);haptic(5);return}
-  if(d.fclear){catFilter=null;render();haptic(5);return}
-  if(t.id==='cushDep'){amountSheet('В подушку',function(v,aid){S.tx.push({id:Date.now()+Math.random(),type:'exp',amount:v,cat:'Подушка',acc:aid,note:'В подушку безопасности',date:todayStr(),goal_id:'cushion'})});return}
+  if(d.fcat){catFilter=d.fcat;showAllStatsTx=true;render();setTimeout(function(){var el=document.getElementById('lst');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},50);return}
+  if(d.fclear){catFilter=null;render();return}
+  if(t.id==='cushDep'){amountSheet('В подушку',function(v,aid){S.tx.push({id:Date.now()+Math.random(),type:'exp',amount:v,cat:'Подушка',acc:aid,note:'В подушку',date:todayStr(),goal_id:'cushion'})});return}
   if(t.id==='cushWd'){amountSheet('Снять из подушки',function(v,aid){var b=cushBal();if(v>b){alert('В подушке только '+fmt2(b));return}S.tx.push({id:Date.now()+Math.random(),type:'inc',amount:v,cat:'Подушка',acc:aid,note:'Снятие из подушки',date:todayStr(),goal_id:'cushion'})});return}
-  if(d.theme){S.theme=d.theme;save();document.documentElement.setAttribute('data-theme',S.theme);render();haptic(5);return}
+  if(d.theme){S.theme=d.theme;save();document.documentElement.setAttribute('data-theme',S.theme);render();return}
   
   if(t.id==='btn-exp'){ addTx(null, 'exp'); return; }
   if(t.id==='btn-inc'){ addTx(null, 'inc'); return; }
@@ -1064,15 +1025,15 @@ document.addEventListener('click',function(e){
   if(d.ghist){showGoalHistory(d.ghist);return}
   if(d.cat){catSheet(d.cat,d.name);return}
   if(d.acc){accSheet(d.acc);return}
-  if(d.del){if(confirm('Удалить?')){S.tx=S.tx.filter(function(x){return String(x.id)!==d.del});save();haptic(30);render()}return}
+  if(d.del){if(confirm('Удалить?')){S.tx=S.tx.filter(function(x){return String(x.id)!==d.del});save();render()}return}
   if(t.id==='addGoal'){goalSheet();return}
   
   if(d.gedit){ goalSheet(d.gedit); return; }
   if(d.dep){ savingSheet(null, d.dep); return; }
   
   if(d.wd){var g2=findG(d.wd);amountSheet('Снять с «'+esc(g2.name)+'»',function(v,aid){S.tx.push({id:Date.now()+Math.random(),type:'inc',amount:v,cat:GOAL_CAT,acc:aid,note:'Снятие с цели: '+g2.name,date:todayStr(),goal_id:g2.id})});return}
-  if(d.garch){var ga=findG(d.garch);if(!confirm('В архив?'))return;ga.archived=true;save();haptic(15);render();return}
-  if(d.gunarch){var gr=findG(d.gunarch);gr.archived=false;save();haptic(15);render();return}
+  if(d.garch){var ga=findG(d.garch);if(!confirm('В архив?'))return;ga.archived=true;save();render();return}
+  if(d.gunarch){var gr=findG(d.gunarch);gr.archived=false;save();render();return}
   
   if(d.gdel){
     var g3=findG(d.gdel),bal=goalBal(g3);
@@ -1087,12 +1048,12 @@ document.addEventListener('click',function(e){
     S.savings.forEach(function(x){if(String(x.goal_id)===String(g3.id)) delete x.goal_id;});
     S.tx.forEach(function(x){if(String(x.goal_id)===String(g3.id)) delete x.goal_id;});
     S.goals=S.goals.filter(function(x){return x.id!==g3.id});
-    save();haptic(30);render();return;
+    save();render();return;
   }
   
-  if(t.id==='pm'){viewM=new Date(viewM.getFullYear(),viewM.getMonth()-1,1);render();haptic(5);return}
-  if(t.id==='nm'){viewM=new Date(viewM.getFullYear(),viewM.getMonth()+1,1);render();haptic(5);return}
-  if(t.id==='tm'){viewM=new Date();render();haptic(5);return}
+  if(t.id==='pm'){viewM=new Date(viewM.getFullYear(),viewM.getMonth()-1,1);render();return}
+  if(t.id==='nm'){viewM=new Date(viewM.getFullYear(),viewM.getMonth()+1,1);render();return}
+  if(t.id==='tm'){viewM=new Date();render();return}
   
   if(t.id==='expJson'){
     var txt=JSON.stringify(S);
