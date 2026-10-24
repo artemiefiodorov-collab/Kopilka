@@ -27,11 +27,17 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html {
+  background: var(--card);
+  height: 100%;
+  transition: background 0.3s;
+}
 body { 
   margin: 0; background: var(--bg); color: var(--ink); 
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif; 
   font-size: 16px; line-height: 1.4; 
-  /* Верхний отступ оставляем */
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
   padding-top: max(50px, env(safe-area-inset-top, 0px)); 
   padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px)); 
   transition: background 0.3s, color 0.3s;
@@ -65,21 +71,20 @@ button { font-family: inherit; }
 .btn.ghost { background: var(--chip); color: var(--ink); box-shadow: none; }
 .empty { color: var(--mute); padding: 24px 0; text-align: center; font-size: 15px; }
 
-/* ИСПРАВЛЕНИЕ НИЗА: ЕДИНЫЙ НИЖНИЙ БЛОК */
+/* НИЖНИЙ БЛОК */
 .bottom-panel {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
-  background: var(--card); /* Фон панели теперь белый */
+  background: var(--card);
   display: flex; flex-direction: column;
   border-top: 1px solid var(--line);
-  /* Безопасный отступ теперь на всем контейнере, чтобы белый фон растянулся до низа */
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  transform: translateZ(0);
 }
 
-/* Панель кнопок Расход/Доход */
 .actions-row {
   display: flex; gap: 8px; padding: 10px 16px;
   max-width: 520px; margin: 0 auto; width: 100%;
-  background: var(--bg); /* Серый фон только для этой полоски */
+  background: var(--bg);
 }
 .action-btn {
   height: 46px; border-radius: 12px; border: none;
@@ -91,11 +96,10 @@ button { font-family: inherit; }
 .btn-exp { flex: 2; background: var(--ink); color: var(--bg); }
 .btn-inc { flex: 1; background: var(--card); color: var(--ink); border: 1px solid var(--line); }
 
-/* Само меню навигации */
 nav { 
   display: flex; 
   background: var(--card); 
-  padding: 6px 6px 8px; /* Убрали safe-area отсюда */
+  padding: 6px 6px 8px;
   border-top: 1px solid var(--line); 
 }
 nav button { flex: 1; background: none; border: 0; padding: 6px 2px; font-size: 10px; color: var(--mute); font-weight: 600; cursor: pointer; }
