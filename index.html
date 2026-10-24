@@ -31,18 +31,16 @@ body {
   margin: 0; background: var(--bg); color: var(--ink); 
   font-family: Onest, -apple-system, "Segoe UI", Roboto, sans-serif; 
   font-size: 16px; line-height: 1.4; 
-  
-  /* ИСПРАВЛЕНИЕ ВЕРХА: max(50px) защищает от глюков safe-area на iOS */
+  /* Верхний отступ оставляем */
   padding-top: max(50px, env(safe-area-inset-top, 0px)); 
   padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px)); 
-  
   transition: background 0.3s, color 0.3s;
   overscroll-behavior-y: none;
 }
 main { 
   max-width: 520px; 
   margin: 0 auto; 
-  padding: 16px; /* Отступы со всех сторон, чтобы текст не лип к краям */
+  padding: 16px; 
 }
 h1 { font-size: 14px; font-weight: 600; color: var(--mute); margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.5px; }
 .big { font-size: 48px; font-weight: 700; letter-spacing: -0.04em; margin: 0; line-height: 1.1; }
@@ -67,18 +65,21 @@ button { font-family: inherit; }
 .btn.ghost { background: var(--chip); color: var(--ink); box-shadow: none; }
 .empty { color: var(--mute); padding: 24px 0; text-align: center; font-size: 15px; }
 
-/* ЕДИНЫЙ НИЖНИЙ БЛОК */
+/* ИСПРАВЛЕНИЕ НИЗА: ЕДИНЫЙ НИЖНИЙ БЛОК */
 .bottom-panel {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
-  background: var(--bg);
+  background: var(--card); /* Фон панели теперь белый */
   display: flex; flex-direction: column;
   border-top: 1px solid var(--line);
+  /* Безопасный отступ теперь на всем контейнере, чтобы белый фон растянулся до низа */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Панель кнопок Расход/Доход */
 .actions-row {
   display: flex; gap: 8px; padding: 10px 16px;
   max-width: 520px; margin: 0 auto; width: 100%;
+  background: var(--bg); /* Серый фон только для этой полоски */
 }
 .action-btn {
   height: 46px; border-radius: 12px; border: none;
@@ -90,11 +91,11 @@ button { font-family: inherit; }
 .btn-exp { flex: 2; background: var(--ink); color: var(--bg); }
 .btn-inc { flex: 1; background: var(--card); color: var(--ink); border: 1px solid var(--line); }
 
-/* Само меню навигации (Safe Area перенесена сюда) */
+/* Само меню навигации */
 nav { 
   display: flex; 
   background: var(--card); 
-  padding: 6px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+  padding: 6px 6px 8px; /* Убрали safe-area отсюда */
   border-top: 1px solid var(--line); 
 }
 nav button { flex: 1; background: none; border: 0; padding: 6px 2px; font-size: 10px; color: var(--mute); font-weight: 600; cursor: pointer; }
@@ -246,7 +247,6 @@ function initApp() {
   document.documentElement.setAttribute('data-theme', S.theme || 'light');
   render();
   
-  // Проверяем уведомления с задержкой, чтобы не мешать загрузке
   setTimeout(checkSmartNotifications, 2000);
 }
 
@@ -267,9 +267,8 @@ function norm(o){
   o.salary=o.salary||30000; o.hours=o.hours||160;
   o.theme=o.theme||'light';
   
-  // НОВЫЕ ПОЛЯ
   o.notifEnabled = o.notifEnabled || false;
-  o.hapticEnabled = o.hapticEnabled !== false; // по умолчанию включено
+  o.hapticEnabled = o.hapticEnabled !== false; 
   o.notifs = o.notifs || {};
   
   if(!o.accs||!o.accs.length)o.accs=[{id:1,name:'Основной',cur:'MDL',start:0}];
@@ -514,7 +513,6 @@ function render(){
     
     h+='<div class="card"><b>Тема оформления</b><div class="chips" style="margin:8px 0 0"><button class="chip'+(S.theme==='light'?' on':'')+'" data-theme="light">Светлая</button><button class="chip'+(S.theme==='dark'?' on':'')+'" data-theme="dark">Тёмная</button></div></div>';
     
-    // НОВЫЙ БЛОК УВЕДОМЛЕНИЙ И ВИБРАЦИИ
     h+='<div class="card"><b>Оповещения и вибрация</b>';
     h+='<div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px;"><span>Умные уведомления</span><input type="checkbox" id="notifToggle" style="width:24px; height:24px; margin:0; accent-color:var(--acc);" '+(S.notifEnabled?'checked':'')+'></div>';
     h+='<div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px;"><span>Вибрация (Haptics)</span><input type="checkbox" id="hapticToggle" style="width:24px; height:24px; margin:0; accent-color:var(--acc);" '+(S.hapticEnabled!==false?'checked':'')+'></div>';
@@ -622,7 +620,7 @@ function addTx(eid, defaultType){
     function doSave(keepOpen){var rec=collect();if(!(rec.amount>0)){document.getElementById('a').focus();return}
       if(rec.type==='exp'&&S.limits[rec.cat]){var spent=catSpent(rec.cat),lim=S.limits[rec.cat];if(spent+rec.amount>lim&&!confirm('🚨 Превышение лимита «'+rec.cat+'». Всё равно записать?'))return}
       if(ex){for(var k in rec)ex[k]=rec[k]}else{rec.id=Date.now()+Math.random();S.tx.push(rec)}save();
-      haptic(15); // ВИБРАЦИЯ ПРИ СОХРАНЕНИИ
+      haptic(15); 
       if(keepOpen&&!ex){vals.a='';vals.n='';draw();document.getElementById('a').focus()}else{closeM();render()}}
     
     sh.addEventListener('click',function(e){var t=e.target.closest('button');if(!t)return;
