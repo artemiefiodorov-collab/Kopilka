@@ -174,7 +174,7 @@ input.amt { font-size: 40px; font-weight: 700; text-align: center; background: t
 var DEF={exp:['Продукты','Бензин','Сигареты','Алкоголь','Работа-еда','Коммуналка','Кредиты','Дети','Здоровье','Одежда','Развлечения','Связь','Подарки','Прочее'],inc:['Зарплата','Подработка','Подарок','Прочее'],save:['Кофе','Еда на вынос','Еда на работе','Продукты','Лера','Бензин','Сигареты','Одежда','Развлечения','Сладкое','Подписки','Импульсивные','Прочее']};
 var SYM={MDL:'лей',EUR:'€',USD:'$'};
 var GOAL_CAT='Накопления';
-var EMOJI = {'Продукты':'🛒','Бензин':'⛽','Сигареты':'🚬','Алкоголь':'🍷','Работа-еда':'💼','Коммуналка':'🏠','Кредиты':'🏦','Дети':'🧸','Здоровье':'💊','Одежда':'👕','Развлечения':'🎮','Связь':'📱','Подарки':'🎁','Прочее':'📦','Зарплата':'💰','Подработка':'🛠','Накопления':'🎯'};
+var EMOJI = {'Продукты':'🛒','Бензин':'⛽','Сигареты':'🚬','Алкоголь':'🍷','Работа-еда':'💼','Коммуналка':'🏠','Кредиты':'🏦','Дети':'🧸','Здоровье':'💊','Одежда':'👕','Развлечения':'🎮','Связь':'📱','Подарки':'🎁','Прочее':'📦','Зарплата':'💰','Подработка':'🛠','Накопления':'🎯','Подушка':'🛟'};
 var COL=['#8A9A5B','#B85C6C','#6A7B8C','#C2A878','#7E7E7E','#9E7B9B','#5F8A8B','#CCCCCC'];
 var S=null;
 var showAllStatsTx = false;
@@ -285,6 +285,7 @@ function norm(o){
   o.limits=o.limits||{};
   o.salary=o.salary||30000; o.hours=o.hours||160;
   o.theme=o.theme||'light';
+  o.cushionAmount=typeof o.cushionAmount==='number'?o.cushionAmount:7000;
   
   o.notifEnabled = o.notifEnabled || false;
   o.hapticEnabled = o.hapticEnabled !== false; 
@@ -431,6 +432,22 @@ function yearCard(){
   return '<h2>'+y+' год</h2><div class="card" style="margin-top:8px">'+rows+'</div>';
 }
 
+function cushBal(){var b=0;S.tx.forEach(function(t){if(t.goal_id==='cushion')b+=t.type==='exp'?t.amount:-t.amount});return Math.max(0,b)}
+
+function cushionCard(){
+  var b=cushBal();
+  if(!(b>0)&&!(S.cushionAmount>0))return '';
+  return '<div class="card" style="padding:16px 20px"><div class="item" style="border:0;padding:0"><span class="lbl" style="margin:0">🛟 Подушка безопасности</span><b class="sav">'+fmt2(b)+'</b></div></div>';
+}
+
+function askCushion(rec){
+  var a=S.cushionAmount||0;
+  if(!(a>0)||rec.type!=='inc'||rec.cat!=='Зарплата'||!isMDL(rec)||rec.goal_id)return;
+  var v=Math.min(a,rec.amount);
+  if(confirm('Отложить '+fmt2(v)+' в подушку безопасности?'))
+    S.tx.push({id:Date.now()+Math.random(),type:'exp',amount:v,cat:'Подушка',acc:rec.acc,note:'В подушку безопасности',date:rec.date,goal_id:'cushion'});
+}
+
 function render(){
   var h='',all=S.tx;
   
@@ -446,7 +463,7 @@ function render(){
     h+='<div class="card" style="padding:20px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="lbl">Бюджет на сегодня</span><span class="lbl">'+dbHome.left+' дн. до конца</span></div><div style="display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 12px"><b class="'+(okHome?'inc':'exp')+'" style="font-size:32px;font-weight:700">'+fmt2(dbHome.leftToday)+'</b><span class="lbl">из '+fmt2(dbHome.perDay)+'</span></div><div class="bar'+(okHome?'':' e')+'" style="margin:0"><i style="width:'+pctHome+'%"></i></div></div>';
     
     h+='<div class="row"><div class="card half"><div class="lbl">Доходы</div><div class="val inc">'+fmt2(m.i)+'</div></div><div class="card half"><div class="lbl">Расходы</div><div class="val exp">'+fmt2(m.e)+'</div></div></div>';
-    h+=forecastCard();h+=warns();
+    h+=forecastCard();h+=cushionCard();h+=warns();
   }
 
   if(tab==='goals'){
@@ -503,18 +520,20 @@ function render(){
     if(!isCur)h+='<div style="text-align:center;margin-bottom:16px"><button class="chip" id="tm">→ Текущий месяц</button></div>';
     h+='<div class="row"><div class="card half"><div class="lbl">Доходы</div><div class="val inc">'+fmt2(s.i)+'</div></div><div class="card half"><div class="lbl">Расходы</div><div class="val exp">'+fmt2(s.e)+'</div></div></div>';
     
-    var goalSpent=0, goalWithdrawn=0;
+    var goalSpent=0, goalWithdrawn=0, cushIn=0, cushOut=0;
     mm.forEach(function(t){
         if(!isMDL(t) || !t.goal_id) return;
+        if(t.goal_id==='cushion'){ if(t.type==='exp') cushIn += t.amount; else cushOut += t.amount; return; }
         if(t.type==='exp') goalSpent += t.amount;
         else               goalWithdrawn += t.amount;
     });
-    var diff = s.i + goalWithdrawn - s.e - goalSpent;
+    var diff = s.i + goalWithdrawn - s.e - goalSpent - cushIn + cushOut;
     
     h+='<div class="card">'
      +'<div class="item" style="border:0;padding:0"><span class="lbl">Доходы</span><b class="inc">'+fmt2(s.i)+'</b></div>'
      +'<div class="item" style="border:0;padding:0"><span class="lbl">Расходы</span><b class="exp">'+fmt2(s.e)+'</b></div>'
      +'<div class="item" style="border:0;padding:0"><span class="lbl">Отложено в цели</span><b class="sav">'+fmt2(goalSpent)+'</b></div>'
+     +((cushIn||cushOut)?'<div class="item" style="border:0;padding:0"><span class="lbl">Отложено в подушку</span><b class="sav">'+fmt2(cushIn-cushOut)+'</b></div>':'')
      +(goalWithdrawn>0?'<div class="item" style="border:0;padding:0"><span class="lbl">Снято с целей</span><b>'+fmt2(goalWithdrawn)+'</b></div>':'')
      +'<div class="item" style="border:0;padding:0"><span class="lbl">Разница (доход − расход − цели)</span><b class="'+(diff>=0?'inc':'exp')+'">'+fmt2(diff)+'</b></div>'
      +'</div>';
@@ -561,6 +580,7 @@ function render(){
     h+='<div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px;"><span>Вибрация (Haptics)</span><input type="checkbox" id="hapticToggle" style="width:24px; height:24px; margin:0; accent-color:var(--acc);" '+(S.hapticEnabled!==false?'checked':'')+'></div>';
     h+='</div>';
 
+    h+='<div class="card"><b>🛟 Подушка безопасности</b><p class="note">Откладывается с зарплаты и не входит в свободные деньги и бюджет на день.</p><div class="lbl">Откладывать с зарплаты, лей</div><input data-wt="cushionAmount" inputmode="decimal" value="'+(S.cushionAmount||0)+'" style="margin:6px 0 12px"><div class="item" style="border:0;padding:0 0 12px"><span class="lbl" style="margin:0">Накоплено</span><b class="sav">'+fmt2(cushBal())+'</b></div><div class="btnrow"><button class="btn" id="cushDep">Пополнить</button><button class="btn ghost" id="cushWd">Снять</button></div></div>';
     h+='<div class="card"><b>Счета</b><p class="note">Счета в EUR/USD показываются отдельно.</p><div class="chips" style="margin:0">'+S.accs.map(function(a){return '<button class="chip" data-acc="'+a.id+'">'+esc(a.name)+' · '+SYM[a.cur]+'</button>'}).join('')+'<button class="chip" data-acc="new">+ Добавить</button></div></div>';
     h+='<div class="card"><b>Работа и деньги</b><div class="row"><div style="flex:1"><div class="lbl">Зарплата, лей/мес</div><input data-wt="salary" inputmode="decimal" value="'+S.salary+'" style="margin:6px 0 0"></div><div style="flex:1"><div class="lbl">Часов/мес</div><input data-wt="hours" inputmode="decimal" value="'+S.hours+'" style="margin:6px 0 0"></div></div></div>';
     
@@ -662,7 +682,7 @@ function addTx(eid, defaultType){
     
     function doSave(keepOpen){var rec=collect();if(!(rec.amount>0)){document.getElementById('a').focus();return}
       if(rec.type==='exp'&&S.limits[rec.cat]){var spent=catSpent(rec.cat),lim=S.limits[rec.cat];if(spent+rec.amount>lim&&!confirm('🚨 Превышение лимита «'+rec.cat+'». Всё равно записать?'))return}
-      if(ex){for(var k in rec)ex[k]=rec[k]}else{rec.id=Date.now()+Math.random();S.tx.push(rec)}save();
+      if(ex){for(var k in rec)ex[k]=rec[k]}else{rec.id=Date.now()+Math.random();S.tx.push(rec);askCushion(rec)}save();
       haptic(15); 
       if(keepOpen&&!ex){vals.a='';vals.n='';draw();document.getElementById('a').focus()}else{closeM();render()}}
     
@@ -1030,6 +1050,8 @@ document.addEventListener('click',function(e){
   if(d.sort){sortMode=d.sort;render();return}
   if(d.fcat){catFilter=d.fcat;showAllStatsTx=true;render();setTimeout(function(){var el=document.getElementById('lst');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},50);haptic(5);return}
   if(d.fclear){catFilter=null;render();haptic(5);return}
+  if(t.id==='cushDep'){amountSheet('В подушку',function(v,aid){S.tx.push({id:Date.now()+Math.random(),type:'exp',amount:v,cat:'Подушка',acc:aid,note:'В подушку безопасности',date:todayStr(),goal_id:'cushion'})});return}
+  if(t.id==='cushWd'){amountSheet('Снять из подушки',function(v,aid){var b=cushBal();if(v>b){alert('В подушке только '+fmt2(b));return}S.tx.push({id:Date.now()+Math.random(),type:'inc',amount:v,cat:'Подушка',acc:aid,note:'Снятие из подушки',date:todayStr(),goal_id:'cushion'})});return}
   if(d.theme){S.theme=d.theme;save();document.documentElement.setAttribute('data-theme',S.theme);render();haptic(5);return}
   
   if(t.id==='btn-exp'){ addTx(null, 'exp'); return; }
@@ -1113,7 +1135,7 @@ document.addEventListener('click',function(e){
 });
 
 document.addEventListener('input',function(e){if(e.target.id==='q'){var l=document.getElementById('lst');if(l)l.innerHTML=lstHtml(e.target.value)}});
-document.addEventListener('change',function(e){var k=e.target.dataset&&e.target.dataset.wt;if(k){var v=num(e.target.value);if(v>0){S[k]=v;save()}render()}});
+document.addEventListener('change',function(e){var k=e.target.dataset&&e.target.dataset.wt;if(k){var v=num(e.target.value);if(k==='cushionAmount'&&isNaN(v))v=0;if(v>0||(k==='cushionAmount'&&v===0)){S[k]=v;save()}render()}});
 
 initApp();
 
