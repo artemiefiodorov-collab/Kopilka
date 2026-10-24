@@ -76,7 +76,7 @@ button { font-family: inherit; }
   background: var(--card);
   display: flex; flex-direction: column;
   border-top: 1px solid var(--line);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) * 0.4);
   transform: translateZ(0);
 }
 
@@ -98,7 +98,7 @@ button { font-family: inherit; }
 nav { 
   display: flex; 
   background: var(--card); 
-  padding: 6px 6px 8px;
+  padding: 6px 6px 4px;
   border-top: 1px solid var(--line); 
 }
 nav button { flex: 1; background: none; border: 0; padding: 6px 2px; font-size: 10px; color: var(--mute); font-weight: 600; cursor: pointer; }
