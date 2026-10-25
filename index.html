@@ -244,6 +244,7 @@ function initApp() {
   render();
   
   setTimeout(checkSmartNotifications, 2000);
+  if(S.startAdd)setTimeout(function(){addTx(null,'exp')},300);
 }
 
 document.addEventListener('visibilitychange', function() {
@@ -418,6 +419,41 @@ function askCushion(rec){
     S.tx.push({id:Date.now()+Math.random(),type:'exp',amount:v,cat:'Подушка',acc:rec.acc,note:'В подушку',date:rec.date,goal_id:'cushion'});
 }
 
+function insightsHtml(mm){
+  var ex=mm.filter(function(t){return t.type==='exp'&&isMDL(t)&&!t.goal_id});
+  if(!ex.length)return '';
+  var now=new Date(),isCur=viewM.getFullYear()===now.getFullYear()&&viewM.getMonth()===now.getMonth();
+  var days=isCur?now.getDate():daysInMonth(viewM.getFullYear(),viewM.getMonth());
+  var tot=0,big=ex[0],byDay={},wk=0,cnt={};
+  ex.forEach(function(t){
+    tot+=t.amount;if(t.amount>big.amount)big=t;
+    byDay[t.date]=(byDay[t.date]||0)+t.amount;
+    var g=new Date(t.date+'T00:00:00').getDay();if(g===0||g===6)wk+=t.amount;
+    cnt[t.cat]=(cnt[t.cat]||0)+1;
+  });
+  var dk=Object.keys(byDay).sort(function(a,b){return byDay[b]-byDay[a]})[0];
+  var ck=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]})[0];
+  function box(l,v,sub){return '<div class="card half" style="display:flex;flex-direction:column;justify-content:space-between;min-height:110px"><div><span class="lbl">'+l+'</span>'+(sub?'<span class="lbl" style="margin:0">'+sub+'</span>':'')+'</div><div class="val">'+v+'</div></div>'}
+  var cum=[],c=0;
+  for(var d=1;d<=days;d++){
+    var key=viewM.getFullYear()+'-'+String(viewM.getMonth()+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    c+=byDay[key]||0;cum.push(c);
+  }
+  var pts=cum.map(function(v,i){return (days>1?i/(days-1)*300:0)+','+(90-v/c*80)}).join(' ');
+  var chart='<div class="card"><span class="lbl">Расходы нарастающим итогом</span><svg viewBox="0 0 300 100" preserveAspectRatio="none" style="width:100%;height:110px;display:block"><polygon points="0,90 '+pts+' 300,90" fill="var(--exp)" opacity="0.12"/><polyline points="'+pts+'" fill="none" stroke="var(--exp)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg><div style="display:flex;justify-content:space-between;align-items:center"><span class="lbl" style="margin:0">1</span><b>'+fmt2(c)+'</b><span class="lbl" style="margin:0">'+days+'</span></div></div>';
+  var cb=cushBal(),runway='';
+  if(cb>0){
+    var n2=new Date(),te=0,mc=0;
+    for(var k=0;k<6;k++){var e2=sums(S.tx.filter(function(t){return mkey(t)===ym(new Date(n2.getFullYear(),n2.getMonth()-k,1))})).e;if(e2>0){te+=e2;mc++}}
+    if(mc)runway=box('Подушка',(Math.round(cb/(te/mc)*10)/10).toLocaleString('ru-RU')+' мес.','хватит на расходы');
+  }
+  return '<h2>Инсайты</h2>'+chart
+    +'<div class="row">'+box('Средние траты в день',fmt2(tot/days))+box('Самая большая трата',fmt2(big.amount),esc(big.cat)+(big.note?' · '+esc(big.note):''))+'</div>'
+    +'<div class="row">'+box('Самый дорогой день',fmt2(byDay[dk]),dfmt(dk))+box('Траты в выходные',Math.round(wk/tot*100)+'%')+'</div>'
+    +'<div class="row">'+box('Операций',String(ex.length))+box('Частая категория',esc(ck),cnt[ck]+' р.')+'</div>'
+    +(runway?'<div class="row">'+runway+'<div class="half"></div></div>':'');
+}
+
 function render(){
   var h='',all=S.tx;
   
@@ -514,6 +550,7 @@ function render(){
     var by={};
     mm.filter(function(t){return t.type==='exp'&&isMDL(t)&&!t.goal_id}).forEach(function(t){by[t.cat]=(by[t.cat]||0)+t.amount});
     var keys=Object.keys(by).sort(function(a,b){return by[b]-by[a]});
+    h+=insightsHtml(mm);
     h+='<h2>Расходы по категориям</h2><div class="card" style="margin-top:8px">';
     if(keys.length){
         h+=donut(by,keys,s.e)+keys.map(function(k,i){
@@ -549,6 +586,7 @@ function render(){
     h+='<div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px;"><span>Умные уведомления</span><input type="checkbox" id="notifToggle" style="width:24px; height:24px; margin:0; accent-color:var(--acc);" '+(S.notifEnabled?'checked':'')+'></div>';
     h+='</div>';
 
+    h+='<div class="card"><b>Быстрый ввод</b><p class="note">Открывать форму расхода сразу при запуске. Удобно вместе с «Касанием задней панели» на iPhone.</p><div style="display:flex;align-items:center;justify-content:space-between"><span>Форма расхода при запуске</span><input type="checkbox" id="startToggle" style="width:24px;height:24px;margin:0;accent-color:var(--acc);" '+(S.startAdd?'checked':'')+'></div></div>';
     h+='<div class="card"><b>🛟 Подушка</b><p class="note">Откладывается с зарплаты и не входит в свободные деньги и бюджет на день.</p><div class="lbl">Откладывать с зарплаты, лей</div><input data-wt="cushionAmount" inputmode="decimal" value="'+(S.cushionAmount||0)+'" style="margin:6px 0 12px"><div class="item" style="border:0;padding:0 0 12px"><span class="lbl" style="margin:0">Накоплено</span><b class="sav">'+fmt2(cushBal())+'</b></div><div class="btnrow"><button class="btn" id="cushDep">Пополнить</button><button class="btn ghost" id="cushWd">Снять</button></div></div>';
     h+='<div class="card"><b>Счета</b><p class="note">Счета в EUR/USD показываются отдельно.</p><div class="chips" style="margin:0">'+S.accs.map(function(a){return '<button class="chip" data-acc="'+a.id+'">'+esc(a.name)+' · '+SYM[a.cur]+'</button>'}).join('')+'<button class="chip" data-acc="new">+ Добавить</button></div></div>';
     h+='<div class="card"><b>Работа и деньги</b><div class="row"><div style="flex:1"><div class="lbl">Зарплата, лей/мес</div><input data-wt="salary" inputmode="decimal" value="'+S.salary+'" style="margin:6px 0 0"></div><div style="flex:1"><div class="lbl">Часов/мес</div><input data-wt="hours" inputmode="decimal" value="'+S.hours+'" style="margin:6px 0 0"></div></div></div>';
@@ -1096,7 +1134,7 @@ document.addEventListener('click',function(e){
 });
 
 document.addEventListener('input',function(e){if(e.target.id==='q'){var l=document.getElementById('lst');if(l)l.innerHTML=lstHtml(e.target.value)}});
-document.addEventListener('change',function(e){var k=e.target.dataset&&e.target.dataset.wt;if(k){var v=num(e.target.value);if(k==='cushionAmount'&&isNaN(v))v=0;if(v>0||(k==='cushionAmount'&&v===0)){S[k]=v;save()}render()}});
+document.addEventListener('change',function(e){if(e.target.id==='startToggle'){S.startAdd=e.target.checked;save();return}var k=e.target.dataset&&e.target.dataset.wt;if(k){var v=num(e.target.value);if(k==='cushionAmount'&&isNaN(v))v=0;if(v>0||(k==='cushionAmount'&&v===0)){S[k]=v;save()}render()}});
 
 initApp();
 
