@@ -601,8 +601,9 @@ function render(){
     h+='<div class="card"><b>Резервная копия</b><p class="note">Данные хранятся в localStorage. Делайте экспорт как резервную копию.</p><div class="btnrow"><button class="btn" id="expJson">JSON</button><button class="btn ghost" id="expCsv">CSV</button></div><div style="height:10px"></div><div class="btnrow"><button class="btn ghost" id="impJson">Импорт JSON</button><button class="btn ghost" id="impCsv">Импорт CSV</button></div></div>';
   }
 
+  if(tab==='smoke')h+=smokeView();
   document.getElementById('app').innerHTML=h;
-  var nav=[['home','🏠','Главная'],['goals','🎯','Цели'],['stats','📊','Месяц'],['more','⚙️','Ещё']];
+  var nav=[['home','🏠','Главная'],['goals','🎯','Цели'],['stats','📊','Месяц'],['smoke','🚬','Курение'],['more','⚙️','Ещё']];
   document.getElementById('nav').innerHTML=nav.map(function(n){return '<button data-tab="'+n[0]+'" class="'+(tab===n[0]?'on':'')+'"><span>'+n[1]+'</span>'+n[2]+'</button>'}).join('');
   
   // Обработчики для переключателей в настройках
@@ -1141,6 +1142,56 @@ document.addEventListener('click',function(e){
 
 document.addEventListener('input',function(e){if(e.target.id==='q'){var l=document.getElementById('lst');if(l)l.innerHTML=lstHtml(e.target.value)}});
 document.addEventListener('change',function(e){if(e.target.id==='startToggle'){S.startAdd=e.target.checked;save();return}var k=e.target.dataset&&e.target.dataset.wt;if(k){var v=num(e.target.value);if(k==='cushionAmount'&&isNaN(v))v=0;if(v>0||(k==='cushionAmount'&&v===0)){S[k]=v;save()}render()}});
+
+// ===== ВКЛАДКА «КУРЕНИЕ» =====
+function sm(){var o=S.sm=S.sm||{};if(!o.ev)o.ev=[];if(o.base==null)o.base=17;if(o.price==null)o.price=75;if(o.pack==null)o.pack=20;if(o.step==null)o.step=2;if(!o.start)o.start=todayStr();if(!o.credAv)o.credAv=0;return o}
+function smK(t){var d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function smD(k){var p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
+function smGoal(o,k){var w=Math.max(0,Math.floor(Math.round((smD(k)-smD(o.start))/864e5)/7));return Math.max(0,o.base-o.step*w)}
+function smData(){
+  var o=sm(),c={},r=0;
+  o.ev.forEach(function(e){if(e.y==='s'){var k=smK(e.t);c[k]=(c[k]||0)+1}else r++});
+  var pc=o.price/Math.max(1,o.pack),td=todayStr(),n=Math.max(0,Math.round((smD(td)-smD(o.start))/864e5)),av=0,streak=0,ok=[];
+  for(var i=0;i<n;i++){var d=smD(o.start);d.setDate(d.getDate()+i);var k=smK(d),cnt=c[k]||0;av+=Math.max(0,o.base-cnt);ok.push(cnt<=smGoal(o,k))}
+  for(var j=ok.length-1;j>=0&&ok[j];j--)streak++;
+  return{o:o,c:c,r:r,pc:pc,td:td,av:av,streak:streak,saved:av*pc};
+}
+function smokeView(){
+  var D=smData(),o=D.o,n=D.c[D.td]||0,g=smGoal(o,D.td),over=n>g,p=g?Math.min(100,n/g*100):100;
+  var pend=Math.round((D.av-o.credAv)*D.pc*100)/100,bars='';
+  for(var i=6;i>=0;i--){
+    var d=new Date();d.setDate(d.getDate()-i);var k=smK(d),v=D.c[k]||0,mx=Math.max(o.base,1);
+    bars+='<div style="flex:1;text-align:center"><div style="height:60px;display:flex;align-items:flex-end;justify-content:center"><i style="width:60%;height:'+Math.max(4,v/mx*100)+'%;background:var('+(v>smGoal(o,k)?'--exp':'--inc')+');border-radius:6px 6px 0 0;opacity:.85"></i></div><div class="lbl" style="margin-top:4px">'+v+'</div></div>';
+  }
+  function f(k,l,v){return '<div style="flex:1"><div class="lbl">'+l+'</div><input data-sm-set="'+k+'" inputmode="decimal" value="'+v+'" style="margin:4px 0 0"></div>'}
+  return '<h1>Курение</h1>'
+  +'<div class="card"><div class="lbl">Сегодня выкурено</div><p class="big '+(over?'exp':'')+'">'+n+' <span class="lbl" style="font-size:20px;display:inline">/ '+g+'</span></p><div class="bar'+(over?' e':'')+'"><i style="width:'+p+'%"></i></div></div>'
+  +'<div class="btnrow" style="margin-top:16px"><button class="btn" data-sm="s">Выкурил</button><button class="btn ghost" data-sm="r">Устоял</button></div>'
+  +'<div style="text-align:center"><button class="del" data-sm="u">Отменить последнее</button></div>'
+  +'<div class="row"><div class="card half"><div class="lbl">Сэкономлено</div><div class="val inc">'+fmt2(D.av*D.pc)+'</div></div><div class="card half"><div class="lbl">Серия дней в цели</div><div class="val">'+D.streak+'</div></div></div>'
+  +'<div class="row"><div class="card half"><div class="lbl">Не выкурено</div><div class="val">'+Math.round(D.av)+'</div></div><div class="card half"><div class="lbl">Устоял раз</div><div class="val">'+D.r+'</div></div></div>'
+  +'<p class="note">Деньги считаются за закрытые дни: (было − выкурено) × цена сигареты.</p>'
+  +(pend>=1?'<button class="btn" data-sm="c">Зачислить '+fmt2(pend)+' в экономию</button>':'')
+  +'<div class="card"><div class="lbl">Последние 7 дней</div><div style="display:flex;gap:6px">'+bars+'</div></div>'
+  +'<div class="card"><b>Настройки</b><div class="row" style="margin-top:10px">'+f('price','Пачка, лей',o.price)+f('pack','В пачке, шт',o.pack)+'</div><div class="row" style="margin-top:10px">'+f('base','Было в день',o.base)+f('step','Минус в неделю',o.step)+'</div><div class="lbl" style="margin-top:10px">Одна сигарета: '+fmt2(D.pc)+' · цель сегодня: '+g+'</div></div>';
+}
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-sm]');if(!t)return;
+  var o=sm(),a=t.dataset.sm;
+  if(a==='s'||a==='r')o.ev.push({t:Date.now(),y:a});
+  else if(a==='u'){for(var i=o.ev.length-1;i>=0;i--)if(smK(o.ev[i].t)===todayStr()){o.ev.splice(i,1);break}}
+  else if(a==='c'){
+    var D=smData(),p=Math.round((D.av-o.credAv)*D.pc*100)/100;if(p<=0)return;
+    S.savings.push({id:Date.now()+Math.random(),amount:p,cat:'Сигареты',note:'Меньше курения',date:todayStr()});
+    o.credAv=D.av;
+  }
+  save();render();
+});
+document.addEventListener('change',function(e){
+  var k=e.target.dataset&&e.target.dataset.smSet;if(!k)return;
+  var v=num(e.target.value);if(isNaN(v)||v<0||(k==='pack'&&v<1))return;
+  sm()[k]=v;save();render();
+});
 
 initApp();
 
