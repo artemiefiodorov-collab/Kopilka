@@ -179,6 +179,7 @@ var COL=['#8A9A5B','#B85C6C','#6A7B8C','#C2A878','#7E7E7E','#9E7B9B','#5F8A8B','
 var S=null;
 var showAllStatsTx = false;
 var sortMode = 'date_desc';
+var savPeriod = 'all';
 var catFilter = null;
 var showAllCats = false, showCatSettings = false;
 
@@ -455,6 +456,46 @@ function insightsHtml(mm){
     +(runway?'<div class="row">'+runway+'<div class="half"></div></div>':'');
 }
 
+// СТАТИСТИКА ЭКОНОМИИ
+function savStatsHtml(){
+  var cm=ym(new Date()), items=S.savings.slice();
+  S.tx.forEach(function(t){
+    if(t.goal_id && t.goal_id!=='cushion' && t.type==='exp' && S.cats.save.indexOf(t.cat)>=0) items.push(t);
+  });
+  if(savPeriod==='month') items=items.filter(function(x){return x.date && mkey(x)===cm});
+
+  var h='<h2>Где экономлю</h2>'
+    +'<div class="chips" style="margin-bottom:8px">'
+    +'<button class="chip'+(savPeriod==='month'?' on':'')+'" data-savp="month">Месяц</button>'
+    +'<button class="chip'+(savPeriod==='all'?' on':'')+'" data-savp="all">Всё время</button></div>';
+
+  if(!items.length) return h+'<div class="card empty">Пока нет данных об экономии.</div>';
+
+  var by={}, cnt={}, tot=0;
+  items.forEach(function(x){
+    by[x.cat]=(by[x.cat]||0)+x.amount; cnt[x.cat]=(cnt[x.cat]||0)+1; tot+=x.amount;
+  });
+  var keys=Object.keys(by).sort(function(a,b){return by[b]-by[a]});
+
+  h+='<div class="card" style="margin-top:0">'
+    +'<div class="item" style="border:0;padding:0 0 8px"><span class="lbl" style="margin:0">Всего сэкономлено</span><b class="sav">'+fmt2(tot)+'</b></div>';
+  keys.forEach(function(k,i){
+    var p=by[k]/tot*100;
+    h+='<div style="padding:10px 0"><div class="item" style="border:0;padding:0">'
+      +'<span><i class="dot" style="background:'+COL[i%COL.length]+'"></i>'+esc(k)+' <small style="display:inline;color:var(--mute)">· '+cnt[k]+' р.</small></span>'
+      +'<b>'+fmt2(by[k])+'</b></div>'
+      +'<div class="bar"><i style="width:'+p+'%;background:'+COL[i%COL.length]+'"></i></div></div>';
+  });
+  h+='</div>';
+
+  var top=items.slice().sort(function(a,b){return b.amount-a.amount}).slice(0,5);
+  h+='<div class="card"><b>Самые большие экономии</b>'
+    +top.map(function(x){
+      return '<div class="item"><div class="tx-info"><span class="tx-title">'+esc(x.note||x.cat)+'</span><small>'+esc(x.cat)+' · '+(x.date?dfmt(x.date):'')+'</small></div><b class="sav">'+fmt2(x.amount)+'</b></div>';
+    }).join('')+'</div>';
+  return h;
+}
+
 function render(){
   var h='',all=S.tx;
   
@@ -515,6 +556,7 @@ function render(){
     });
     
     h+='<div style="margin-top:20px"><button class="btn" id="addGoal">Новая цель</button></div>';
+    h+=savStatsHtml();
     var arch=S.goals.filter(function(g){return g.archived});
     if(arch.length){h+='<h2>Архив</h2>';arch.forEach(function(g){var bal=goalBal(g),done=bal>=g.target;h+='<div class="card"><div class="item" style="border:0;padding:0"><b>'+esc(g.name)+'</b><span>'+(done?'🏆':'🛑')+'</span></div><div class="lbl" style="margin-top:4px">'+fmt2(bal)+' из '+fmt2(g.target)+'</div><div class="lbl">'+(done?'Достигнута':'Закрыта')+' · '+dfmt(g.start)+'</div><div class="chips" style="margin-top:10px"><button class="chip" data-gunarch="'+g.id+'">Вернуть</button></div></div>'})}
   }
@@ -1052,6 +1094,7 @@ document.addEventListener('click',function(e){
   
   if(d.tab){tab=d.tab;render();window.scrollTo(0,0);return}
   if(d.sort){sortMode=d.sort;render();return}
+  if(d.savp){savPeriod=d.savp;render();return}
   if(d.fcat){catFilter=d.fcat;showAllStatsTx=true;render();setTimeout(function(){var el=document.getElementById('lst');if(el)el.scrollIntoView({behavior:'smooth',block:'start'})},50);return}
   if(d.fclear){catFilter=null;render();return}
   if(t.id==='cushDep'){amountSheet('В подушку',function(v,aid){S.tx.push({id:Date.now()+Math.random(),type:'exp',amount:v,cat:'Подушка',acc:aid,note:'В подушку',date:todayStr(),goal_id:'cushion'})});return}
