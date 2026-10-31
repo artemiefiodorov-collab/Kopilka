@@ -179,7 +179,7 @@ var COL=['#8A9A5B','#B85C6C','#6A7B8C','#C2A878','#7E7E7E','#9E7B9B','#5F8A8B','
 var S=null;
 var showAllStatsTx = false;
 var sortMode = 'date_desc';
-var savPeriod = 'all';
+var savPeriod = 'all', showSavStats = false;
 var catFilter = null;
 var showAllCats = false, showCatSettings = false;
 
@@ -368,16 +368,16 @@ function warns(){
   var ks=Object.keys(S.limits).filter(function(k){return S.limits[k]>0});
   if(!ks.length)return '';
   ks.sort(function(a,b){return (by[b]||0)/S.limits[b]-(by[a]||0)/S.limits[a]});
-  return '<h2>Лимиты на месяц</h2>'+ks.map(function(k){
+  return '<h2>Лимиты на месяц</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+ks.map(function(k){
     var v=by[k]||0,l=S.limits[k],left=l-v,pr=v/l*100,p=Math.min(100,pr),over=v>l;
     var colr=over?'var(--exp)':(pr>=80?'#C2A878':'var(--acc)');
-    return '<div class="card" style="padding:16px 20px;margin-top:10px">'
-      +'<div class="item" style="border:0;padding:0"><span style="display:flex;align-items:center;gap:10px"><span class="icon-circle" style="width:36px;height:36px;font-size:17px">'+getEmoji(k,'exp')+'</span><b>'+esc(k)+'</b></span><span class="chip" style="padding:4px 10px;font-size:12px;color:'+colr+'">'+Math.round(pr)+'%</span></div>'
-      +'<div class="lbl" style="margin-top:14px;font-size:11px;letter-spacing:.5px">'+(over?'ПРЕВЫШЕНО':'ОСТАЛОСЬ')+'</div>'
-      +'<div class="'+(over?'exp':'')+'" style="font-size:30px;font-weight:700;letter-spacing:-0.02em;line-height:1.2">'+fmt2(Math.abs(left))+'</div>'
-      +'<div class="bar"><i style="width:'+p+'%;background:'+colr+'"></i></div>'
-      +'<div style="display:flex;justify-content:space-between;margin-top:10px"><div><span class="lbl" style="font-size:11px;margin:0">ПОТРАЧЕНО</span><b>'+fmt2(v)+'</b></div><div style="text-align:right"><span class="lbl" style="font-size:11px;margin:0">ЛИМИТ</span><b>'+fmt2(l)+'</b></div></div></div>';
-  }).join('');
+    return '<div class="card" style="padding:12px 14px;margin-top:0;border-radius:20px;min-width:0">'
+      +'<div style="display:flex;align-items:center;gap:8px;min-width:0"><span class="icon-circle" style="width:28px;height:28px;font-size:14px">'+getEmoji(k,'exp')+'</span><b style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(k)+'</b></div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px"><span class="lbl" style="font-size:10px;letter-spacing:.5px;margin:0">'+(over?'ПРЕВЫШЕНО':'ОСТАЛОСЬ')+'</span><span style="font-size:11px;font-weight:600;color:'+colr+'">'+Math.round(pr)+'%</span></div>'
+      +'<div class="'+(over?'exp':'')+'" style="font-size:19px;font-weight:700;letter-spacing:-0.02em;line-height:1.2;white-space:nowrap">'+fmt2(Math.abs(left))+'</div>'
+      +'<div class="bar" style="height:6px;margin-top:6px"><i style="width:'+p+'%;background:'+colr+'"></i></div>'
+      +'<div class="lbl" style="font-size:11px;margin:6px 0 0;white-space:nowrap">'+R2(v).toLocaleString('ru-RU')+' из '+R2(l).toLocaleString('ru-RU')+'</div></div>';
+  }).join('')+'</div>';
 }
 
 function donut(by,keys,tot){var C=2*Math.PI*32,off=0;var s='<svg viewBox="0 0 100 100" width="140" height="140" style="transform:rotate(-90deg);display:block;margin:10px auto 16px;"><circle cx="50" cy="50" r="32" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="12"/>';keys.forEach(function(k,i){var l=by[k]/tot*C;s+='<circle cx="50" cy="50" r="32" fill="none" stroke="'+COL[i%COL.length]+'" stroke-width="12" stroke-linecap="round" stroke-dasharray="'+l+' '+(C-l)+'" stroke-dashoffset="'+(-off)+'"/>';off+=l});return s+'</svg>'}
@@ -494,10 +494,11 @@ function showSavCat(cat){
 }
 
 function savStatsHtml(){
+  if(!showSavStats) return '<div style="margin-top:20px"><button class="btn ghost" id="toggleSav">📊 Где экономлю ▾</button></div>';
   var items=savItems();
 
-  var h='<h2>Где экономлю</h2>'
-    +'<div class="chips" style="margin-bottom:8px">'
+  var h='<div class="item" style="border:0;padding:0;margin-top:20px"><h2 style="margin:0">Где экономлю</h2><button class="chip" id="toggleSav">Скрыть ▴</button></div>'
+    +'<div class="chips" style="margin:10px 0 8px">'
     +'<button class="chip'+(savPeriod==='month'?' on':'')+'" data-savp="month">Месяц</button>'
     +'<button class="chip'+(savPeriod==='all'?' on':'')+'" data-savp="all">Всё время</button></div>';
 
@@ -520,17 +521,12 @@ function savStatsHtml(){
   });
   h+='</div>';
 
-  var top=items.slice().sort(function(a,b){return b.amount-a.amount}).slice(0,5);
-  h+='<div class="card"><b>Самые большие экономии</b>'
-    +top.map(function(x){
-      return '<div class="item"><div class="tx-info"><span class="tx-title">'+esc(x.note||x.cat)+'</span><small>'+esc(x.cat)+' · '+(x.date?dfmt(x.date):'')+'</small></div><b class="sav">'+fmt2(x.amount)+'</b></div>';
-    }).join('')+'</div>';
   return h;
 }
 
 // ФИНАНСОВОЕ ЗДОРОВЬЕ (списки можно править)
 var HEALTH_MAND=['Коммуналка','Кредиты','Дети','Здоровье','Связь','Продукты','Бензин'];
-var HEALTH_IMP=['Сигареты','Алкоголь','Развлечения','Одежда'];
+var HEALTH_IMP=['Сигареты','Алкоголь','Развлечения','Одежда','Прочее'];
 function healthCard(){
   var cm=ym(new Date()),by={mand:0,imp:0,con:0},tot=0,inc=0;
   S.tx.forEach(function(t){
@@ -1173,6 +1169,7 @@ document.addEventListener('click',function(e){
   if(t.id==='openWishes'){showWishes();return}
   if(t.id==='toggleTx'){showAllStatsTx=!showAllStatsTx;render();return}
   if(t.id==='toggleCats'){showAllCats=!showAllCats;render();return}
+  if(t.id==='toggleSav'){showSavStats=!showSavStats;render();return}
   if(t.id==='toggleCatSet'){showCatSettings=!showCatSettings;render();return}
   if(d.edit){addTx(d.edit);return}
   if(d.sedit){savingSheet(d.sedit);return}
