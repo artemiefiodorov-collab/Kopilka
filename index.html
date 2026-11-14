@@ -381,10 +381,6 @@ function warns(){
   }).join('')+'</div>';
 }
 
-function donut(by,keys,tot){var C=2*Math.PI*32,off=0;var s='<svg viewBox="0 0 100 100" width="140" height="140" style="transform:rotate(-90deg);display:block;margin:10px auto 16px;"><circle cx="50" cy="50" r="32" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="12"/>';keys.forEach(function(k,i){var l=by[k]/tot*C;s+='<circle cx="50" cy="50" r="32" fill="none" stroke="'+COL[i%COL.length]+'" stroke-width="12" stroke-linecap="round" stroke-dasharray="'+l+' '+(C-l)+'" stroke-dashoffset="'+(-off)+'"/>';off+=l});return s+'</svg>'}
-
-function trend(){var n=new Date(),rows=[],mx=1;for(var k=5;k>=0;k--){var d=new Date(n.getFullYear(),n.getMonth()-k,1);var s=sums(S.tx.filter(function(t){return mkey(t)===ym(d)}));rows.push({l:d.toLocaleDateString('ru-RU',{month:'short'}),i:s.i,e:s.e});mx=Math.max(mx,s.i,s.e)}return '<div style="display:flex;gap:8px">'+rows.map(function(r){return '<div style="flex:1;text-align:center"><div style="display:flex;gap:4px;align-items:flex-end;height:80px;justify-content:center"><i style="width:40%;height:'+Math.max(4,r.i/mx*100)+'%;background:var(--inc);border-radius:6px 6px 0 0;opacity:0.8"></i><i style="width:40%;height:'+Math.max(4,r.e/mx*100)+'%;background:var(--exp);border-radius:6px 6px 0 0;opacity:0.8"></i></div><div class="lbl" style="margin-top:6px">'+r.l+'</div></div>'}).join('')+'</div><div class="lbl" style="margin-top:10px;text-align:center"><span class="inc">●</span> доходы &nbsp; <span class="exp">●</span> расходы</div>'}
-
 function catCard(){if(!showCatSettings)return '<div class="card"><button class="btn ghost" id="toggleCatSet">Категории ▾</button></div>';var h='<div class="card"><div class="item" style="border:0;padding:0"><b>Категории</b><button class="chip" id="toggleCatSet">Скрыть ▴</button></div><p class="note">Нажми, чтобы переименовать, задать лимит или удалить.</p>';[['exp','Расходы'],['inc','Доходы'],['save','Экономия']].forEach(function(g){h+='<div class="lbl" style="margin-top:12px">'+g[1]+'</div><div class="chips" style="margin:8px 0 4px">'+S.cats[g[0]].map(function(c){return '<button class="chip" data-cat="'+g[0]+'" data-name="'+esc(c)+'">'+esc(c)+(g[0]==='exp'&&S.limits[c]?' · '+S.limits[c]:'')+'</button>'}).join('')+'<button class="chip" data-cat="'+g[0]+'" data-name="">+ Добавить</button></div>'});return h+'</div>'}
 
 function lstHtml(q){
@@ -453,13 +449,6 @@ function insightsHtml(mm){
   var dk=Object.keys(byDay).sort(function(a,b){return byDay[b]-byDay[a]})[0];
   var ck=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]})[0];
   function box(l,v,sub){return '<div class="card half" style="display:flex;flex-direction:column;justify-content:space-between;min-height:110px"><div><span class="lbl">'+l+'</span>'+(sub?'<span class="lbl" style="margin:0">'+sub+'</span>':'')+'</div><div class="val">'+v+'</div></div>'}
-  var cum=[],c=0;
-  for(var d=1;d<=days;d++){
-    var key=viewM.getFullYear()+'-'+String(viewM.getMonth()+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    c+=byDay[key]||0;cum.push(c);
-  }
-  var pts=cum.map(function(v,i){return (days>1?i/(days-1)*300:0)+','+(90-v/c*80)}).join(' ');
-  var chart='<div class="card"><span class="lbl">Расходы нарастающим итогом</span><svg viewBox="0 0 300 100" preserveAspectRatio="none" style="width:100%;height:110px;display:block"><polygon points="0,90 '+pts+' 300,90" fill="var(--exp)" opacity="0.12"/><polyline points="'+pts+'" fill="none" stroke="var(--exp)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg><div style="display:flex;justify-content:space-between;align-items:center"><span class="lbl" style="margin:0">1</span><b>'+fmt2(c)+'</b><span class="lbl" style="margin:0">'+days+'</span></div></div>';
   var cb=cushBal(),runway='';
   if(cb>0){
     var n2=new Date(),te=0,mc=0;
@@ -479,7 +468,7 @@ function insightsHtml(mm){
     +'<span class="lbl" style="margin:0">÷ <input data-fwd="'+fkey+'" inputmode="numeric" value="'+wdays+'" style="width:56px;display:inline-block;padding:2px 8px;margin:0;font-size:13px;border-radius:8px"> раб. дн.</span></div>'
     +'<div class="val">'+fmt2(wdays>0?fw/wdays:0)+'</div></div></div>';
 
-  return '<h2>Инсайты</h2>'+chart
+  return '<h2>Инсайты</h2>'
     +'<div class="row">'+box('Средние траты в день',fmt2(tot/days))+box('Самая большая трата',fmt2(big.amount),esc(big.cat)+(big.note?' · '+esc(big.note):''))+'</div>'
     +'<div class="row">'+box('Самый дорогой день',fmt2(byDay[dk]),dfmt(dk))+box('Траты в выходные',Math.round(wk/tot*100)+'%')+'</div>'
     +'<div class="row">'+box('Операций',String(ex.length))+box('Частая категория',esc(ck),cnt[ck]+' р.')+'</div>'
@@ -674,14 +663,14 @@ function render(){
     h+=insightsHtml(mm);
     h+='<h2>Расходы по категориям</h2><div class="card" style="margin-top:8px">';
     if(keys.length){
-        h+=donut(by,keys,s.e)+keys.slice(0,showAllCats?keys.length:3).map(function(k,i){
+        h+=keys.slice(0,showAllCats?keys.length:3).map(function(k,i){
             var v=by[k];
             var p = v/s.e*100;
             return '<div style="padding:10px 0;cursor:pointer" data-fcat="'+esc(k)+'"><div class="item" style="border:0;padding:0"><span><i class="dot" style="background:'+COL[i%COL.length]+'"></i>'+esc(k)+'</span><b>'+fmt2(v)+'</b></div><div class="bar e"><i style="width:'+p+'%;background:'+COL[i%COL.length]+'"></i></div></div>';
         }).join('');
     if(keys.length>3)h+='<button class="chip" id="toggleCats" style="margin-top:8px">'+(showAllCats?'Скрыть ▴':'Показать все ('+keys.length+') ▾')+'</button>';
     }else h+='<div class="empty">В этом месяце расходов нет.</div>';
-    h+='</div><h2>Последние 6 месяцев</h2><div class="card" style="margin-top:8px">'+trend()+'</div>'+yearCard();
+    h+='</div>'+yearCard();
     
     h+='<div style="margin-top:24px"><button class="btn ghost" id="toggleTx">📁 '+(showAllStatsTx?'Скрыть операции за месяц':'Посмотреть все операции за месяц ('+mm.length+')')+'</button></div>';
     if(showAllStatsTx){
