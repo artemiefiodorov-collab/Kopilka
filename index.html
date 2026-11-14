@@ -263,6 +263,7 @@ function norm(o){
   o.cats.inc=o.cats.inc||DEF.inc.slice();
   o.cats.save=o.cats.save||DEF.save.slice();
   o.limits=o.limits||{};
+  o.workDays=o.workDays||{};
   o.salary=o.salary||30000; o.hours=o.hours||160;
   o.theme=o.theme||'light';
   o.cushionAmount=typeof o.cushionAmount==='number'?o.cushionAmount:7000;
@@ -465,10 +466,24 @@ function insightsHtml(mm){
     for(var k=0;k<6;k++){var e2=sums(S.tx.filter(function(t){return mkey(t)===ym(new Date(n2.getFullYear(),n2.getMonth()-k,1))})).e;if(e2>0){te+=e2;mc++}}
     if(mc)runway=box('Подушка',(Math.round(cb/(te/mc)*10)/10).toLocaleString('ru-RU')+' мес.','хватит на расходы');
   }
+
+  // Еда в день: продукты — по всем дням, еда на работе — по рабочим дням
+  var fy=viewM.getFullYear(),fm=viewM.getMonth(),fg=0,fw=0,auto=0;
+  ex.forEach(function(t){if(t.cat==='Продукты')fg+=t.amount;else if(t.cat==='Работа-еда')fw+=t.amount});
+  for(var q=1;q<=days;q++){var wk2=new Date(fy,fm,q).getDay();if(wk2!==0&&wk2!==6)auto++}
+  S.workDays=S.workDays||{};
+  var fkey=fy+'-'+(fm+1),wdays=S.workDays[fkey]>0?S.workDays[fkey]:auto;
+  var food='<div class="row">'
+    +box('Продукты в день',fmt2(fg/days),'÷ '+days+' дн. месяца')
+    +'<div class="card half" style="display:flex;flex-direction:column;justify-content:space-between;min-height:110px"><div><span class="lbl">Еда на работе в день</span>'
+    +'<span class="lbl" style="margin:0">÷ <input data-fwd="'+fkey+'" inputmode="numeric" value="'+wdays+'" style="width:56px;display:inline-block;padding:2px 8px;margin:0;font-size:13px;border-radius:8px"> раб. дн.</span></div>'
+    +'<div class="val">'+fmt2(wdays>0?fw/wdays:0)+'</div></div></div>';
+
   return '<h2>Инсайты</h2>'+chart
     +'<div class="row">'+box('Средние траты в день',fmt2(tot/days))+box('Самая большая трата',fmt2(big.amount),esc(big.cat)+(big.note?' · '+esc(big.note):''))+'</div>'
     +'<div class="row">'+box('Самый дорогой день',fmt2(byDay[dk]),dfmt(dk))+box('Траты в выходные',Math.round(wk/tot*100)+'%')+'</div>'
     +'<div class="row">'+box('Операций',String(ex.length))+box('Частая категория',esc(ck),cnt[ck]+' р.')+'</div>'
+    +food
     +(runway?'<div class="row">'+runway+'<div class="half"></div></div>':'');
 }
 
@@ -1297,6 +1312,14 @@ document.addEventListener('change',function(e){
   var k=e.target.dataset&&e.target.dataset.smSet;if(!k)return;
   var v=num(e.target.value);if(isNaN(v)||v<0||(k==='pack'&&v<1))return;
   sm()[k]=v;save();render();
+});
+
+// Рабочие дни для «Еда на работе в день» (правка по месяцам)
+document.addEventListener('change',function(e){
+  var k=e.target.dataset&&e.target.dataset.fwd;if(!k)return;
+  var v=parseInt(e.target.value);S.workDays=S.workDays||{};
+  if(v>0)S.workDays[k]=v;else delete S.workDays[k];
+  save();render();
 });
 
 initApp();
